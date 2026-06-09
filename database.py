@@ -32,7 +32,7 @@ class User(Base):
     is_public = Column(Boolean, default=True)
 
     # link user to snippet
-    snippets = relationship("Snippetc", back_populates="owner")
+    snippets = relationship("Snippet", back_populates="owner")
 
 
 ### Snippet Schema
