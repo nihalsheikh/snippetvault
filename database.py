@@ -15,6 +15,14 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 # OOP part: all Database models will inherit from this Base class
 Base = declarative_base()
 
+# Start DB session for each request and close it after completion
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 # Schema
 ### User Schema
 class User(Base):
