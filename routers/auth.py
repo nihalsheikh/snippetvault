@@ -2,11 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from jose import JWTError, jwt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from passlib.context import CryptContext
 import os
-from database import get_db, User
-from schemas import UserCreate, SnippetCreates
+from database import get_db
+from models import User
+from schemas.users import UserCreate
+from schemas.auth import Token
+from schemas.common import MessageResponse
 from dotenv import load_dotenv
 
 
@@ -56,9 +59,14 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     return user
 
 
-## User CRUD Routes
-### create user
-@router.post("/signup/")
+# User Signup
+@router.post(
+    "/signup/",
+    status_code=status.HTTP_201_CREATED,
+    response_model=MessageResponse,
+    summary="Create a new user",
+    description="Register a new user account using a unique username and email address."
+)
 async def user_signup(user_data: UserCreate, db: Session = Depends(get_db)):
     # check for exisiting username or email in DB
     existing_username = db.query(User).filter(
@@ -66,7 +74,10 @@ async def user_signup(user_data: UserCreate, db: Session = Depends(get_db)):
     ).first()
 
     if existing_username:
-        raise HTTPException(status_code=409, detail="Username or Email already registered.")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Username or Email already registered."
+        )
 
     # Password character limitation
     password_to_hash = user_data.password
@@ -82,19 +93,30 @@ async def user_signup(user_data: UserCreate, db: Session = Depends(get_db)):
         first_name=user_data.first_name,
         last_name=user_data.last_name,
         email=user_data.email,
-        hashed_password=hashed_password
+        hashed_password=hashed_password,
+        is_public=user_data.is_public
     )
 
     # add, save/commit, refresh
     db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
+
+    try:
+        db.commit()
+        db.refresh(new_user)
+    except Exception:
+        db.rollback()
+        raise
 
     return { "message": "User created successfully." }
 
 
-### user login
-@router.post("/signin/")
+# User Signin
+@router.post(
+    "/signin/",
+    response_model=Token,
+    summary="User login",
+    description="Authenticate a user and return a JWT access token."
+)
 async def user_signin(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     # Find username in db
     user = db.query(User).filter(User.username == form_data.username).first()
@@ -102,13 +124,13 @@ async def user_signin(form_data: OAuth2PasswordRequestForm = Depends(), db: Sess
     # Verify the username and check if password is correct
     if not user or not password_context.verify(form_data.password, user.hashed_password):
         raise HTTPException(
-            status_code=401,
+            status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"}
         )
 
     # Create a JWT token
-    access_token_expires = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token_expires = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode = {
         "exp": access_token_expires,
         "sub": str(user.id) # sub is subject (user id)
