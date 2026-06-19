@@ -1,6 +1,5 @@
 from fastapi import FastAPI
 from routers import auth, snippets, users
-from database import SessionLocal, Snippet
 
 # FastAPI instance
 app = FastAPI()
@@ -8,9 +7,13 @@ app = FastAPI()
 # All the other routes
 app.include_router(auth.router)
 app.include_router(snippets.router)
-# app.include_router(users.router)
+app.include_router(users.router)
 
 # Home Route
-@app.get("/")
-def home():
+@app.get(
+    "/",
+    summary="Home Page",
+    description="Health check endpoint to verify that the SnippetVault API is running."
+)
+def home_page():
     return { "message": "SnippetVault API is online" }
