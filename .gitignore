@@ -2,6 +2,9 @@
 .vscode/
 .idea/
 
+# backend db
+backend/snippetvault.db
+
 # OS
 .DS_Store
 Thumbs.db
