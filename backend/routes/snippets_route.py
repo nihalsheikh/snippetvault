@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime, timezone, timedelta
 from uuid import UUID
 
+from middleware.rate_limit import limiter
 from config.env_config import env_settings
 from models import Snippet, Tag, User, SnippetBookmark
 from utils.get_db import get_db
@@ -89,6 +90,7 @@ def get_snippet(request: Request, snippet_id: UUID, db: Session = Depends(get_db
 
 
 # Create a Snippet
+@limiter.limit("20/minute")
 @router.post(
     "/snippets",
     status_code=status.HTTP_201_CREATED,
@@ -221,6 +223,7 @@ def get_user_snippet(
 
 
 # Update a snippet
+@limiter.limit("30/minute")
 @router.patch(
     "/snippets/{snippet_id}",
     status_code=status.HTTP_200_OK,
@@ -327,6 +330,7 @@ def delete_user_snippet(
 
 
 # Copy Count of a snippet
+@limiter.limit("30/minute")
 @router.post(
     "/snippets/{snippet_id}/copy",
     status_code=status.HTTP_200_OK,
@@ -366,6 +370,7 @@ def copy_snippet(
 
 
 # Bookmark Snippet
+@limiter.limit("30/minute")
 @router.post(
     "/snippets/{snippet_id}/bookmark",
     status_code=status.HTTP_201_CREATED,

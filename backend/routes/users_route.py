@@ -3,6 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone, timedelta
 
+from middleware.rate_limit import limiter
 from emails.email_service import send_verification_email
 from config.env_config import env_settings
 from config.jwt_config import refresh_token_expire_days
@@ -46,6 +47,7 @@ def build_verification_url(raw_token: str) -> str:
 
 
 # User Signup
+@limiter.limit("5/minute")
 @router.post(
     "/auth/signup",
     status_code=status.HTTP_201_CREATED,
@@ -100,6 +102,7 @@ def signup(
 
 
 # User Login
+@limiter.limit("5/minute")
 @router.post(
     "/auth/login",
     status_code=status.HTTP_200_OK,
@@ -264,6 +267,7 @@ def update_profile(
 
 
 # Update Email
+@limiter.limit("3/minute")
 @router.patch(
     "/auth/email",
     status_code=status.HTTP_200_OK,
@@ -335,6 +339,7 @@ def update_email(
 
 
 # Verify Email
+@limiter.limit("5/minute")
 @router.post(
     "/auth/email/verify",
     status_code=status.HTTP_200_OK,
@@ -343,6 +348,7 @@ def update_email(
     description="Verify a user's email address using a valid email verification token.",
 )
 def verify_email(
+    request: Request,
     verify_email_data: UserEmailVerificationRequest,
     db: Session = Depends(get_db),
 ):
@@ -392,6 +398,7 @@ def verify_email(
 
 
 # Resend Verification Email
+@limiter.limit("3/minute")
 @router.post(
     "/auth/email/resend",
     status_code=status.HTTP_200_OK,
@@ -498,6 +505,7 @@ def change_password(
 
 
 # Reset Password
+@limiter.limit("5/minute")
 @router.post(
     "/auth/password/reset",
     status_code=status.HTTP_200_OK,

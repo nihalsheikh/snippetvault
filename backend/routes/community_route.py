@@ -23,13 +23,27 @@ router = APIRouter(prefix="/api", tags=["Community"])
 )
 def get_community_users(
     request: Request,
+    page: int = 1,
+    limit: int = 10,
     db: Session = Depends(get_db),
 ):
-    users = db.query(User).order_by(User.created_at.desc()).all()
+    offset = (page - 1) * limit
+
+    query = db.query(User)
+
+    total = query.count()
+
+    users = query.order_by(User.created_at.desc()).offset(offset).limit(limit).all()
+
+    has_next = offset + len(users) < total
 
     return {
         "message": "Fetched community users",
         "users": users,
+        "page": page,
+        "limit": limit,
+        "total": total,
+        "has_next": has_next,
     }
 
 
@@ -107,11 +121,19 @@ def get_community_user_snippets(
             | Snippet.code.ilike(search_term)
         )
 
+    total = query.count()
+
     snippets = (
         query.order_by(Snippet.created_at.desc()).offset(offset).limit(limit).all()
     )
 
+    has_next = offset + len(snippets) < total
+
     return {
         "message": "Fetched community user's public snippets",
         "snippets": snippets,
+        "page": page,
+        "limit": limit,
+        "total": total,
+        "has_next": has_next,
     }

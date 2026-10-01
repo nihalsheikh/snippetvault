@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 from uuid import UUID
 
+from middleware.rate_limit import limiter
 from models import Collection, CollectionSnippet, Snippet
 from schemas.collection_req_res import (
     CreateCollectionRequest,
@@ -19,6 +20,7 @@ router = APIRouter(tags=["Collections"])
 
 
 # Create a Snippet Collection
+@limiter.limit("10/minute")
 @router.post(
     "/collections",
     status_code=status.HTTP_201_CREATED,
@@ -116,6 +118,7 @@ def get_user_collection(
 
 
 # Update a collection
+@limiter.limit("30/minute")
 @router.patch(
     "/collections/{collection_id}",
     status_code=status.HTTP_200_OK,
@@ -161,6 +164,7 @@ def update_collection(
 
 
 # Delete a collection
+@limiter.limit("20/minute")
 @router.delete(
     "/collections/{collection_id}",
     status_code=status.HTTP_200_OK,
@@ -198,6 +202,7 @@ def delete_collection(
 
 
 # Add a snippet to a collection
+@limiter.limit("30/minute")
 @router.post(
     "/collections/{collection_id}/snippets",
     status_code=status.HTTP_201_CREATED,

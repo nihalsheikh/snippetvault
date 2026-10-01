@@ -3,10 +3,13 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 from database.db import Base, engine
 from config.env_config import env_settings
 from models import User, Snippet, OAuthAccount, RefreshToken
+from middleware.rate_limit import limiter
 from middleware.exception_handler import (
     global_exception_handler,
     http_exception_handler,
@@ -27,6 +30,14 @@ BASE_DIR = Path(__file__).resolve().parent
 app = FastAPI(title="SnippetVault API")
 
 
+# Rate Limiter
+app.state.limiter = limiter
+app.add_exception_handler(
+    RateLimitExceeded,
+    _rate_limit_exceeded_handler,
+)
+
+
 # CORS Middleware
 app.add_middleware(
     CORSMiddleware,
@@ -35,7 +46,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 # Email Template Icons
 app.mount(

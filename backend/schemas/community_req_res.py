@@ -19,6 +19,10 @@ class CommunityUserDetails(BaseModel):
 class AllCommunityUsersResponse(BaseModel):
     message: str
     users: list[CommunityUserDetails]
+    page: int
+    limit: int
+    total: int
+    has_next: bool
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -35,5 +39,9 @@ class CommunityUserResponse(BaseModel):
 class CommunityUserSnippetsResponse(BaseModel):
     message: str
     snippets: list[SnippetDetails]
+    page: int
+    limit: int
+    total: int
+    has_next: bool
 
     model_config = ConfigDict(from_attributes=True)
