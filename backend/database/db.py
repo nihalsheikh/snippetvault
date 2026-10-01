@@ -5,7 +5,7 @@ from config.env_config import env_settings
 
 db_url = env_settings.db_url
 
-engine = create_engine(db_url)
+engine = create_engine(db_url, pool_pre_ping=True)
 
 session_local = sessionmaker(bind=engine)
 

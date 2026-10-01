@@ -1,0 +1,6 @@
+from config.env_config import env_settings
+
+jwt_secret = env_settings.jwt_secret_key
+jwt_algo = env_settings.jwt_algorithm
+access_token_expire_minutes = env_settings.access_token_expire_minutes
+refresh_token_expire_days = env_settings.refresh_token_expire_days

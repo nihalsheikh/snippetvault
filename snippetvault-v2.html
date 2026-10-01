@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>SnippetVault — UI Design</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#08080f;--s1:#0d0d18;--s2:#12121f;--s3:#181828;
+  --b1:rgba(255,255,255,0.06);--b2:rgba(255,255,255,0.1);--b3:rgba(255,255,255,0.18);
+  --lime:#bef264;--lime2:#84cc16;--lime3:#4d7c0f;
+  --cyan:#22d3ee;--purple:#a78bfa;--red:#f87171;--orange:#fb923c;--yellow:#fbbf24;--pink:#f472b6;
+  --t1:#f0f0f8;--t2:#9ca3af;--t3:#6b7280;--t4:#374151;
+  --mono:'JetBrains Mono',monospace;--sans:'Outfit',sans-serif;--serif:'Instrument Serif',serif;
+  --r1:6px;--r2:10px;--r3:16px;
+}
+html.light{
+  --bg:#f5f5f0;--s1:#ffffff;--s2:#f0efe9;--s3:#e8e7e0;
+  --b1:rgba(0,0,0,0.07);--b2:rgba(0,0,0,0.12);--b3:rgba(0,0,0,0.2);
+  --lime:#4d7c0f;--lime2:#65a30d;--lime3:#84cc16;
+  --cyan:#0e7490;--purple:#7c3aed;--red:#dc2626;--orange:#c2410c;--yellow:#b45309;--pink:#be185d;
+  --t1:#111118;--t2:#4b5563;--t3:#9ca3af;--t4:#d1d5db;
+}
+html{background:var(--bg);color:var(--t1);font-family:var(--sans);font-size:14px;line-height:1.6;transition:background .25s,color .25s}
+body{min-height:100vh}
+
+/* SCREEN NAV */
+.screen-nav{position:fixed;top:0;left:0;right:0;z-index:1000;background:rgba(8,8,15,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--b1);display:flex;align-items:center;gap:0;padding:0 16px}
+.screen-nav-brand{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--lime);padding:12px 16px 12px 0;border-right:1px solid var(--b1);margin-right:8px;white-space:nowrap;letter-spacing:-0.3px}
+.screen-btn{background:none;border:none;color:var(--t3);font-family:var(--mono);font-size:11px;font-weight:500;padding:13px 12px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;transition:all .15s;letter-spacing:0.3px}
+.screen-btn:hover{color:var(--t1)}
+.screen-btn.active{color:var(--lime);border-bottom-color:var(--lime)}
+.screen-nav{transition:background .3s}
+html.light .screen-nav{background:rgba(245,245,240,0.97)}
+.theme-toggle{margin-left:auto;background:var(--b1);border:1px solid var(--b2);border-radius:99px;padding:5px 14px;font-family:var(--mono);font-size:11px;color:var(--t2);cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;transition:all .2s;flex-shrink:0}
+.theme-toggle:hover{border-color:var(--b3);color:var(--t1)}
+.screen-wrap{display:none;padding-top:48px}
+.screen-wrap.active{display:block}
+
+/* ============ LANDING ============ */
+.land-hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;position:relative;overflow:hidden;padding:80px 24px 60px}
+.land-grid{position:absolute;inset:0;background-image:linear-gradient(var(--b1) 1px,transparent 1px),linear-gradient(90deg,var(--b1) 1px,transparent 1px);background-size:60px 60px;mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black 40%,transparent 100%)}
+.land-glow{position:absolute;top:20%;left:50%;transform:translateX(-50%);width:600px;height:400px;background:radial-gradient(ellipse,rgba(190,242,100,0.08) 0%,transparent 70%);pointer-events:none}
+.land-eyebrow{display:inline-flex;align-items:center;gap:8px;background:rgba(190,242,100,0.08);border:1px solid rgba(190,242,100,0.2);border-radius:99px;padding:5px 14px;font-family:var(--mono);font-size:11px;color:var(--lime);letter-spacing:1px;text-transform:uppercase;margin-bottom:32px;position:relative}
+.land-eyebrow::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--lime);animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+.land-h1{font-family:var(--serif);font-size:clamp(48px,7vw,88px);font-weight:400;line-height:1.05;letter-spacing:-2px;margin-bottom:24px;position:relative}
+.land-h1 em{font-style:italic;color:var(--lime)}
+.land-sub{font-size:18px;color:var(--t2);max-width:560px;line-height:1.7;margin-bottom:44px;position:relative}
+.land-ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;position:relative}
+.btn-primary{background:var(--lime);color:#0d0d18;font-family:var(--sans);font-weight:700;font-size:14px;padding:13px 28px;border-radius:var(--r2);border:none;cursor:pointer;transition:all .2s;letter-spacing:-.2px}
+.btn-primary:hover{background:#d4fb7a;transform:translateY(-1px)}
+.btn-ghost{background:transparent;color:var(--t1);font-family:var(--sans);font-weight:500;font-size:14px;padding:12px 24px;border-radius:var(--r2);border:1px solid var(--b2);cursor:pointer;transition:all .2s}
+.btn-ghost:hover{border-color:var(--b3);background:var(--b1)}
+
+.land-demo{max-width:880px;margin:80px auto 0;position:relative;padding:0 24px}
+.demo-window{background:var(--s2);border:1px solid var(--b2);border-radius:var(--r3);overflow:hidden;box-shadow:0 40px 120px rgba(0,0,0,0.8)}
+.demo-titlebar{background:var(--s1);border-bottom:1px solid var(--b1);padding:12px 16px;display:flex;align-items:center;gap:10px}
+.demo-dots{display:flex;gap:6px}
+.demo-dot{width:10px;height:10px;border-radius:50%}
+.dd-r{background:#f87171}.dd-y{background:#fbbf24}.dd-g{background:#4ade80}
+.demo-title{font-family:var(--mono);font-size:11px;color:var(--t3);margin:0 auto}
+.demo-body{display:grid;grid-template-columns:220px 1fr;min-height:400px}
+.demo-sidebar{border-right:1px solid var(--b1);padding:16px 0}
+.demo-snav-item{display:flex;align-items:center;gap:10px;padding:8px 16px;font-size:12px;color:var(--t2);cursor:pointer;transition:background .15s}
+.demo-snav-item:hover,.demo-snav-item.act{background:var(--b1);color:var(--t1)}
+.demo-snav-item .dsi-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.demo-content{padding:20px}
+.demo-snip-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.demo-card{background:var(--s3);border:1px solid var(--b1);border-radius:var(--r2);overflow:hidden;transition:border-color .2s}
+.demo-card:hover{border-color:var(--b2)}
+.dc-header{padding:10px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--b1)}
+.dc-lang{font-family:var(--mono);font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px}
+.lang-py{background:rgba(250,204,21,0.1);color:#fbbf24}
+.lang-ts{background:rgba(34,211,238,0.1);color:#22d3ee}
+.lang-go{background:rgba(97,218,251,0.1);color:#61dafb}
+.lang-rs{background:rgba(251,146,60,0.1);color:#fb923c}
+.dc-copies{font-family:var(--mono);font-size:10px;color:var(--t3)}
+.dc-code{padding:10px 12px;font-family:var(--mono);font-size:10px;line-height:1.6;color:var(--t2)}
+.dc-code .kw{color:#a78bfa}.dc-code .fn{color:#60a5fa}.dc-code .str{color:#4ade80}.dc-code .cm{color:#4b5563}.dc-code .tp{color:#f472b6}.dc-code .num{color:#fbbf24}
+.dc-footer{padding:8px 12px;border-top:1px solid var(--b1);display:flex;align-items:center;gap:6px}
+.dc-tag{font-size:10px;background:var(--b1);border-radius:4px;padding:2px 6px;color:var(--t3)}
+
+/* FEATURES */
+.land-features{max-width:1000px;margin:100px auto;padding:0 24px}
+.land-sec-label{font-family:var(--mono);font-size:11px;color:var(--lime);letter-spacing:2px;text-transform:uppercase;margin-bottom:16px}
+.land-sec-title{font-family:var(--serif);font-size:clamp(32px,4vw,48px);line-height:1.15;margin-bottom:60px;letter-spacing:-1px}
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;background:var(--b1);border:1px solid var(--b1);border-radius:var(--r3);overflow:hidden}
+.feat-item{background:var(--s1);padding:28px 24px;transition:background .2s}
+.feat-item:hover{background:var(--s2)}
+.feat-icon{font-size:22px;margin-bottom:14px}
+.feat-title{font-size:15px;font-weight:600;margin-bottom:8px;color:var(--t1)}
+.feat-desc{font-size:13px;color:var(--t2);line-height:1.65}
+
+/* STATS */
+.land-stats{max-width:800px;margin:0 auto 100px;padding:0 24px;display:grid;grid-template-columns:repeat(3,1fr);gap:24px;text-align:center}
+.stat-num{font-family:var(--serif);font-size:52px;color:var(--lime);line-height:1}
+.stat-label{font-size:13px;color:var(--t2);margin-top:6px}
+
+/* LAND FOOTER CTA */
+.land-bottom-cta{text-align:center;padding:100px 24px;background:linear-gradient(to bottom,transparent,rgba(190,242,100,0.04))}
+.land-bottom-cta h2{font-family:var(--serif);font-size:clamp(32px,5vw,60px);letter-spacing:-1.5px;margin-bottom:16px}
+.land-bottom-cta p{font-size:16px;color:var(--t2);margin-bottom:36px}
+
+/* ============ AUTH ============ */
+.auth-wrap{min-height:100vh;display:grid;grid-template-columns:1fr 1fr}
+.auth-left{padding:60px 48px;display:flex;flex-direction:column;justify-content:center;max-width:480px;margin:0 auto;width:100%}
+.auth-logo{font-family:var(--mono);font-size:16px;font-weight:700;color:var(--lime);margin-bottom:48px;letter-spacing:-0.5px}
+.auth-logo span{color:var(--t3)}>_</span>
+.auth-h1{font-family:var(--serif);font-size:36px;line-height:1.1;margin-bottom:8px;letter-spacing:-0.8px}
+.auth-sub{font-size:14px;color:var(--t2);margin-bottom:36px}
+.auth-tabs{display:flex;gap:0;border:1px solid var(--b1);border-radius:var(--r1);overflow:hidden;margin-bottom:28px}
+.auth-tab{flex:1;background:none;border:none;padding:9px;font-family:var(--sans);font-size:13px;font-weight:500;color:var(--t2);cursor:pointer;transition:all .2s}
+.auth-tab.act{background:var(--b1);color:var(--t1)}
+.form-group{margin-bottom:16px}
+.form-label{display:block;font-size:12px;color:var(--t2);margin-bottom:6px;font-weight:500;letter-spacing:.3px}
+.form-input{width:100%;background:var(--s2);border:1px solid var(--b1);border-radius:var(--r1);padding:11px 14px;color:var(--t1);font-size:14px;font-family:var(--sans);transition:border-color .2s;outline:none}
+.form-input:focus{border-color:rgba(190,242,100,0.4)}
+.form-input::placeholder{color:var(--t4)}
+.form-hint{font-size:11px;color:var(--t3);margin-top:5px}
+.btn-full{width:100%;background:var(--lime);color:#0d0d18;font-family:var(--sans);font-weight:700;font-size:14px;padding:13px;border-radius:var(--r2);border:none;cursor:pointer;margin-top:8px;letter-spacing:-.2px;transition:background .2s}
+.btn-full:hover{background:#d4fb7a}
+.auth-divider{display:flex;align-items:center;gap:12px;margin:20px 0;font-size:12px;color:var(--t3)}
+.auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--b1)}
+.oauth-btn{width:100%;background:var(--s2);border:1px solid var(--b1);border-radius:var(--r1);padding:11px 14px;color:var(--t1);font-family:var(--sans);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;transition:background .2s}
+.oauth-btn:hover{background:var(--s3)}
+.auth-switch{text-align:center;margin-top:20px;font-size:13px;color:var(--t2)}
+.auth-switch a{color:var(--lime);text-decoration:none;font-weight:600}
+.auth-right{background:var(--s1);border-left:1px solid var(--b1);position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:center;padding:60px 40px}
+.auth-right-grid{position:absolute;inset:0;background-image:linear-gradient(var(--b1) 1px,transparent 1px),linear-gradient(90deg,var(--b1) 1px,transparent 1px);background-size:40px 40px}
+.auth-right-glow{position:absolute;top:30%;right:10%;width:400px;height:400px;background:radial-gradient(circle,rgba(167,139,250,0.08),transparent 70%);pointer-events:none}
+.auth-float-cards{position:relative;display:flex;flex-direction:column;gap:12px}
+.afc{background:rgba(18,18,31,0.9);border:1px solid var(--b2);border-radius:var(--r2);padding:14px;backdrop-filter:blur(10px);transform:translateX(0);transition:transform .3s}
+.afc:nth-child(2){transform:translateX(24px)}
+.afc:nth-child(3){transform:translateX(8px)}
+.afc-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.afc-title{font-size:12px;font-weight:600}
+.afc-code{font-family:var(--mono);font-size:10px;color:var(--t2);line-height:1.6}
+
+/* ============ DASHBOARD ============ */
+.dash-layout{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+.dash-sidebar{background:var(--s1);border-right:1px solid var(--b1);padding:20px 0;position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto;display:flex;flex-direction:column}
+.dash-user{padding:16px 20px;border-bottom:1px solid var(--b1);margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.dash-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--lime),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#0d0d18;flex-shrink:0}
+.dash-username{font-size:13px;font-weight:600}
+.dash-handle{font-family:var(--mono);font-size:10px;color:var(--t3)}
+.dash-nav-section{padding:8px 0}
+.dash-nav-label{font-family:var(--mono);font-size:10px;color:var(--t4);letter-spacing:1.5px;text-transform:uppercase;padding:4px 20px 8px;margin-top:4px}
+.dash-nav-item{display:flex;align-items:center;gap:10px;padding:9px 20px;font-size:13px;color:var(--t2);cursor:pointer;transition:all .15s;border-left:2px solid transparent}
+.dash-nav-item:hover{color:var(--t1);background:var(--b1)}
+.dash-nav-item.act{color:var(--lime);background:rgba(190,242,100,0.04);border-left-color:var(--lime)}
+.dash-nav-icon{font-size:14px;width:18px;text-align:center;flex-shrink:0}
+.dash-nav-count{margin-left:auto;font-family:var(--mono);font-size:10px;background:var(--b1);padding:2px 6px;border-radius:4px;color:var(--t3)}
+.dash-nav-new{margin-left:auto;font-size:9px;background:rgba(190,242,100,0.12);color:var(--lime);padding:1px 5px;border-radius:3px;font-weight:600;letter-spacing:.5px}
+.dash-sidebar-footer{margin-top:auto;padding:16px 20px;border-top:1px solid var(--b1)}
+.dash-plan{font-family:var(--mono);font-size:10px;background:rgba(190,242,100,0.08);border:1px solid rgba(190,242,100,0.2);border-radius:4px;padding:4px 8px;color:var(--lime);display:inline-block}
+
+.dash-main{padding:28px;background:var(--bg)}
+.dash-topbar{display:flex;align-items:center;gap:12px;margin-bottom:28px}
+.dash-search{flex:1;max-width:440px;position:relative}
+.dash-search input{width:100%;background:var(--s2);border:1px solid var(--b1);border-radius:var(--r2);padding:10px 16px 10px 38px;font-size:13px;color:var(--t1);font-family:var(--sans);outline:none;transition:border-color .2s}
+.dash-search input:focus{border-color:rgba(190,242,100,0.3)}
+.dash-search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--t4);font-size:14px}
+.dash-filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px}
+.dash-filter-chip{background:var(--s2);border:1px solid var(--b1);border-radius:99px;padding:5px 12px;font-size:12px;color:var(--t2);cursor:pointer;transition:all .15s;font-family:var(--mono)}
+.dash-filter-chip:hover,.dash-filter-chip.act{background:rgba(190,242,100,0.08);border-color:rgba(190,242,100,0.3);color:var(--lime)}
+.dash-sort{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--t3);margin-left:auto}
+.dash-sort select{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r1);padding:5px 10px;color:var(--t1);font-size:12px;outline:none}
+
+.dash-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px}
+.dash-stat-card{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r2);padding:16px}
+.dsc-label{font-size:11px;color:var(--t3);font-family:var(--mono);margin-bottom:6px;letter-spacing:.5px}
+.dsc-num{font-size:24px;font-weight:700;line-height:1;font-family:var(--serif)}
+.dsc-change{font-size:11px;color:#4ade80;margin-top:4px;font-family:var(--mono)}
+
+.snip-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.snip-card{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r2);overflow:hidden;cursor:pointer;transition:all .2s}
+.snip-card:hover{border-color:var(--b2);transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+.sc-head{padding:12px 14px;border-bottom:1px solid var(--b1);display:flex;align-items:flex-start;gap:10px}
+.sc-icon{width:32px;height:32px;border-radius:var(--r1);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.sc-info{flex:1;min-width:0}
+.sc-title{font-size:13px;font-weight:600;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sc-desc{font-size:11px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sc-menu{color:var(--t4);font-size:16px;cursor:pointer;flex-shrink:0;padding:2px}
+.sc-code{padding:12px 14px;font-family:var(--mono);font-size:11px;line-height:1.7;color:var(--t2);min-height:88px;border-bottom:1px solid var(--b1);background:rgba(0,0,0,0.2)}
+.sc-foot{padding:10px 14px;display:flex;align-items:center;gap:8px}
+.sc-tag{font-size:10px;background:var(--b1);border-radius:4px;padding:2px 7px;color:var(--t3);font-family:var(--mono)}
+.sc-meta{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:11px;color:var(--t3);font-family:var(--mono)}
+.sc-pub{display:flex;align-items:center;gap:4px}
+
+/* ============ CREATE SNIPPET ============ */
+.create-layout{display:grid;grid-template-columns:1fr 320px;min-height:calc(100vh - 48px)}
+.create-editor{display:flex;flex-direction:column;border-right:1px solid var(--b1)}
+.create-editor-head{background:var(--s1);border-bottom:1px solid var(--b1);padding:0;display:flex;align-items:stretch}
+.ced-tab{display:flex;align-items:center;gap:8px;padding:12px 16px;font-family:var(--mono);font-size:12px;color:var(--t2);border-right:1px solid var(--b1);cursor:pointer;border-bottom:2px solid transparent}
+.ced-tab.act{color:var(--t1);border-bottom-color:var(--lime);background:rgba(190,242,100,0.03)}
+.ced-lang-dot{width:8px;height:8px;border-radius:50%}
+.create-code-area{flex:1;padding:0;position:relative;background:rgba(0,0,0,0.15)}
+.line-nums{position:absolute;left:0;top:0;bottom:0;width:44px;background:rgba(0,0,0,0.2);border-right:1px solid var(--b1);display:flex;flex-direction:column;padding:20px 0;align-items:flex-end;padding-right:10px}
+.ln{font-family:var(--mono);font-size:12px;color:var(--t4);line-height:1.7;height:1.7em}
+.code-content{margin-left:44px;padding:20px;font-family:var(--mono);font-size:13px;line-height:1.7;color:var(--t2);position:relative}
+.create-bottom-bar{background:var(--s1);border-top:1px solid var(--b1);padding:12px 20px;display:flex;align-items:center;gap:12px}
+.cbb-info{font-family:var(--mono);font-size:11px;color:var(--t3);display:flex;gap:16px}
+.cbb-ai-btn{margin-left:auto;display:flex;align-items:center;gap:7px;background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.25);border-radius:var(--r1);padding:7px 14px;font-size:12px;color:var(--purple);cursor:pointer;font-family:var(--sans);font-weight:500;transition:all .2s}
+.cbb-ai-btn:hover{background:rgba(167,139,250,0.18)}
+
+.create-panel{background:var(--s1);padding:24px;overflow-y:auto;display:flex;flex-direction:column;gap:20px}
+.cp-section{border-bottom:1px solid var(--b1);padding-bottom:20px}
+.cp-section:last-child{border-bottom:none;padding-bottom:0}
+.cp-label{font-size:11px;color:var(--t3);font-weight:500;letter-spacing:.5px;text-transform:uppercase;font-family:var(--mono);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+.cp-input{width:100%;background:var(--s2);border:1px solid var(--b1);border-radius:var(--r1);padding:9px 12px;color:var(--t1);font-size:13px;font-family:var(--sans);outline:none;transition:border-color .2s}
+.cp-input:focus{border-color:rgba(190,242,100,0.35)}
+.cp-textarea{width:100%;background:var(--s2);border:1px solid var(--b1);border-radius:var(--r1);padding:9px 12px;color:var(--t2);font-size:12px;font-family:var(--sans);outline:none;resize:none;height:72px;line-height:1.6}
+.cp-lang-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.cp-lang-opt{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r1);padding:7px 6px;text-align:center;font-family:var(--mono);font-size:11px;color:var(--t2);cursor:pointer;transition:all .15s}
+.cp-lang-opt:hover,.cp-lang-opt.act{border-color:rgba(190,242,100,0.35);color:var(--lime);background:rgba(190,242,100,0.05)}
+.cp-tag-input{display:flex;gap:6px;flex-wrap:wrap;min-height:36px;background:var(--s2);border:1px solid var(--b1);border-radius:var(--r1);padding:6px}
+.cp-tag{background:rgba(190,242,100,0.08);border:1px solid rgba(190,242,100,0.2);border-radius:4px;padding:2px 8px;font-size:11px;color:var(--lime);font-family:var(--mono);display:flex;align-items:center;gap:4px}
+.cp-tag-x{cursor:pointer;color:var(--t3);font-size:10px}
+.vis-toggle{display:flex;gap:0;border:1px solid var(--b1);border-radius:var(--r1);overflow:hidden}
+.vis-opt{flex:1;padding:7px;text-align:center;font-size:12px;color:var(--t2);cursor:pointer;transition:all .15s;font-family:var(--mono)}
+.vis-opt.act{background:var(--b1);color:var(--t1)}
+.ai-explain-panel{background:rgba(167,139,250,0.06);border:1px solid rgba(167,139,250,0.2);border-radius:var(--r2);padding:14px}
+.aep-label{font-size:11px;color:var(--purple);font-family:var(--mono);letter-spacing:.5px;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.aep-text{font-size:12px;color:var(--t2);line-height:1.7}
+.create-actions{display:flex;flex-direction:column;gap:8px}
+.btn-save{background:var(--lime);color:#0d0d18;font-weight:700;font-size:14px;padding:12px;border-radius:var(--r2);border:none;cursor:pointer;transition:background .2s;font-family:var(--sans)}
+.btn-save:hover{background:#d4fb7a}
+.btn-draft{background:transparent;color:var(--t1);font-size:13px;padding:10px;border-radius:var(--r2);border:1px solid var(--b2);cursor:pointer;font-family:var(--sans);transition:background .2s}
+.btn-draft:hover{background:var(--b1)}
+
+/* ============ SNIPPET DETAIL ============ */
+.detail-layout{max-width:1100px;margin:0 auto;padding:32px 28px;display:grid;grid-template-columns:1fr 320px;gap:24px}
+.detail-head{margin-bottom:20px}
+.detail-breadcrumb{font-family:var(--mono);font-size:11px;color:var(--t3);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.detail-breadcrumb a{color:var(--t2);text-decoration:none}
+.detail-breadcrumb span{color:var(--t4)}
+.detail-title{font-family:var(--serif);font-size:28px;font-weight:400;margin-bottom:8px;letter-spacing:-.5px}
+.detail-desc{font-size:14px;color:var(--t2);margin-bottom:14px}
+.detail-meta{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.detail-author{display:flex;align-items:center;gap:7px;font-size:13px}
+.det-avatar{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--lime),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#0d0d18}
+.detail-stat{font-family:var(--mono);font-size:11px;color:var(--t3);display:flex;align-items:center;gap:4px}
+.detail-tag{font-size:11px;background:var(--b1);border-radius:99px;padding:3px 10px;color:var(--t2);font-family:var(--mono)}
+.detail-code-block{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r3);overflow:hidden}
+.dcb-bar{background:var(--s2);border-bottom:1px solid var(--b1);padding:11px 16px;display:flex;align-items:center;gap:10px}
+.dcb-lang{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--lime)}
+.dcb-filename{font-family:var(--mono);font-size:11px;color:var(--t3)}
+.dcb-actions{margin-left:auto;display:flex;gap:8px}
+.dcb-btn{background:var(--b1);border:1px solid var(--b1);border-radius:var(--r1);padding:5px 12px;font-size:11px;color:var(--t1);cursor:pointer;font-family:var(--mono);transition:all .15s;white-space:nowrap}
+.dcb-btn:hover{border-color:var(--b2);background:var(--s3)}
+.dcb-btn.lim{background:rgba(190,242,100,0.08);border-color:rgba(190,242,100,0.25);color:var(--lime)}
+.dcb-code{padding:24px;font-family:var(--mono);font-size:13px;line-height:1.8;color:var(--t2);display:grid;grid-template-columns:32px 1fr;gap:0}
+.dcb-lns{color:var(--t4);text-align:right;padding-right:16px;user-select:none}
+.detail-right{}
+.dr-card{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r2);padding:16px;margin-bottom:16px}
+.dr-card-title{font-size:12px;font-weight:600;color:var(--t2);margin-bottom:12px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px}
+.ai-block{background:rgba(167,139,250,0.06);border:1px solid rgba(167,139,250,0.2);border-radius:var(--r2);padding:16px;margin-bottom:16px}
+.ai-block-head{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.ai-block-icon{width:24px;height:24px;border-radius:var(--r1);background:rgba(167,139,250,0.15);display:flex;align-items:center;justify-content:center;font-size:13px}
+.ai-block-label{font-size:13px;font-weight:600;color:var(--purple)}
+.ai-block-text{font-size:13px;color:var(--t2);line-height:1.75}
+.ai-block-text .hi{color:var(--t1);font-weight:500}
+
+/* ============ COMMUNITY ============ */
+.comm-head{background:var(--s1);border-bottom:1px solid var(--b1);padding:40px 28px 32px}
+.comm-head-inner{max-width:1100px;margin:0 auto}
+.comm-h1{font-family:var(--serif);font-size:36px;letter-spacing:-1px;margin-bottom:8px}
+.comm-sub{font-size:15px;color:var(--t2);margin-bottom:24px}
+.comm-search-bar{display:flex;gap:10px;max-width:600px}
+.comm-search-input{flex:1;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r2);padding:12px 16px;font-size:14px;color:var(--t1);font-family:var(--sans);outline:none;transition:border-color .2s}
+.comm-search-input:focus{border-color:rgba(190,242,100,0.4)}
+.comm-search-btn{background:var(--lime);color:#0d0d18;font-weight:700;font-size:14px;padding:12px 20px;border-radius:var(--r2);border:none;cursor:pointer;white-space:nowrap}
+.comm-body{max-width:1100px;margin:0 auto;padding:28px}
+.comm-featured{margin-bottom:36px}
+.comm-sec-label{font-size:11px;color:var(--lime);font-family:var(--mono);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:16px}
+.comm-featured-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.comm-filter-bar{display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+.comm-filter-label{font-size:12px;color:var(--t3);font-family:var(--mono)}
+.comm-chips{display:flex;gap:6px;flex-wrap:wrap}
+.comm-chip{background:var(--s2);border:1px solid var(--b1);border-radius:99px;padding:4px 12px;font-size:11px;color:var(--t2);cursor:pointer;font-family:var(--mono);transition:all .15s}
+.comm-chip:hover,.comm-chip.act{background:rgba(190,242,100,0.06);border-color:rgba(190,242,100,0.3);color:var(--lime)}
+.comm-sort{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--t3)}
+.comm-sort select{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r1);padding:4px 8px;color:var(--t1);font-size:12px;outline:none}
+.comm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+
+/* ============ PROFILE/SETTINGS ============ */
+.profile-wrap{max-width:820px;margin:0 auto;padding:36px 24px}
+.profile-cover{height:160px;background:linear-gradient(135deg,rgba(190,242,100,0.08),rgba(167,139,250,0.08));border:1px solid var(--b1);border-radius:var(--r3);margin-bottom:-40px;position:relative}
+.profile-cover-edit{position:absolute;top:12px;right:12px;background:var(--b1);backdrop-filter:blur(8px);border:1px solid var(--b2);border-radius:var(--r1);padding:6px 12px;font-size:11px;color:var(--t1);cursor:pointer;font-family:var(--mono)}
+.profile-top{display:flex;align-items:flex-end;gap:16px;padding:0 24px;margin-bottom:24px;position:relative;z-index:1}
+.profile-avatar-wrap{position:relative}
+.profile-avatar{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--lime),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:#0d0d18;border:3px solid var(--bg)}
+.profile-avatar-edit{position:absolute;bottom:2px;right:2px;width:22px;height:22px;border-radius:50%;background:var(--s2);border:1px solid var(--b2);display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer}
+.profile-info{flex:1;padding-bottom:12px}
+.profile-name{font-family:var(--serif);font-size:24px;letter-spacing:-.5px;margin-bottom:2px}
+.profile-handle{font-family:var(--mono);font-size:13px;color:var(--t3);margin-bottom:8px}
+.profile-bio{font-size:13px;color:var(--t2)}
+.profile-actions{padding-bottom:12px;display:flex;gap:8px}
+.profile-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:32px}
+.ps-card{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r2);padding:16px;text-align:center}
+.ps-num{font-family:var(--serif);font-size:28px;color:var(--lime)}
+.ps-label{font-size:11px;color:var(--t3);margin-top:4px;font-family:var(--mono)}
+
+.settings-nav{display:flex;gap:0;border-bottom:1px solid var(--b1);margin-bottom:28px}
+.settings-nav-btn{background:none;border:none;padding:10px 18px;font-family:var(--mono);font-size:12px;color:var(--t2);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap}
+.settings-nav-btn.act{color:var(--lime);border-bottom-color:var(--lime)}
+.settings-section{margin-bottom:28px}
+.settings-section-title{font-size:14px;font-weight:600;margin-bottom:4px}
+.settings-section-desc{font-size:12px;color:var(--t3);margin-bottom:16px}
+.settings-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.settings-field{display:flex;flex-direction:column;gap:5px}
+.settings-label{font-size:11px;color:var(--t2);font-weight:500;font-family:var(--mono);letter-spacing:.3px}
+.settings-input{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r1);padding:9px 12px;color:var(--t1);font-size:13px;outline:none;transition:border-color .2s;width:100%;font-family:var(--sans)}
+.settings-input:focus{border-color:rgba(190,242,100,0.35)}
+.settings-toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--b1)}
+.settings-toggle-row:last-child{border-bottom:none}
+.settings-toggle-info{}
+.settings-toggle-title{font-size:13px;font-weight:500;margin-bottom:2px}
+.settings-toggle-desc{font-size:12px;color:var(--t3)}
+.toggle{width:40px;height:22px;border-radius:11px;background:var(--b1);position:relative;cursor:pointer;border:1px solid var(--b2);flex-shrink:0;transition:background .2s}
+.toggle.on{background:rgba(190,242,100,0.25);border-color:rgba(190,242,100,0.4)}
+.toggle::after{content:'';position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:var(--t3);transition:all .2s}
+.toggle.on::after{left:21px;background:var(--lime)}
+.danger-zone{background:rgba(248,113,113,0.04);border:1px solid rgba(248,113,113,0.2);border-radius:var(--r2);padding:20px}
+.dz-title{font-size:14px;font-weight:600;color:var(--red);margin-bottom:4px}
+.dz-desc{font-size:12px;color:var(--t2);margin-bottom:14px}
+.btn-danger{background:transparent;color:var(--red);font-size:13px;padding:8px 18px;border-radius:var(--r1);border:1px solid rgba(248,113,113,0.3);cursor:pointer;font-family:var(--sans);transition:all .2s}
+.btn-danger:hover{background:rgba(248,113,113,0.08)}
+.settings-save{background:var(--lime);color:#0d0d18;font-weight:700;font-size:14px;padding:11px 28px;border-radius:var(--r2);border:none;cursor:pointer;font-family:var(--sans);transition:background .2s}
+.settings-save:hover{background:#d4fb7a}
+
+/* SHARED */
+.kw{color:#a78bfa}.fn{color:#60a5fa}.str{color:#4ade80}.cm{color:#4b5563}.tp{color:#f472b6}.num{color:#fbbf24}.op{color:#e2e8f0}.prop{color:#22d3ee}
+
+/* ============ WEBSITE NAVBAR ============ */
+.site-nav{
+  position:sticky;top:0;z-index:100;
+  display:flex;align-items:center;gap:0;
+  padding:0 40px;height:64px;
+  background:rgba(8,8,15,0.85);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--b1);
+  transition:background .3s;
+}
+html.light .site-nav{background:rgba(245,245,240,0.92)}
+.site-nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none;margin-right:40px;flex-shrink:0}
+.site-nav-icon{width:32px;height:32px;background:var(--lime);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:13px;font-weight:700;color:#0d0d18;flex-shrink:0}
+.site-nav-wordmark{font-family:var(--sans);font-size:16px;font-weight:700;color:var(--t1);letter-spacing:-.4px}
+.site-nav-wordmark span{color:var(--lime)}
+.site-nav-links{display:flex;gap:0;flex:1}
+.site-nav-link{background:none;border:none;font-family:var(--sans);font-size:14px;font-weight:500;color:var(--t2);padding:0 16px;height:64px;cursor:pointer;transition:color .15s;position:relative;white-space:nowrap}
+.site-nav-link:hover{color:var(--t1)}
+.site-nav-link::after{content:'';position:absolute;bottom:0;left:16px;right:16px;height:2px;background:var(--lime);border-radius:99px;opacity:0;transition:opacity .2s}
+.site-nav-link:hover::after{opacity:0.4}
+.site-nav-badge{font-size:9px;font-weight:700;background:rgba(190,242,100,0.15);color:var(--lime);border:1px solid rgba(190,242,100,0.3);border-radius:99px;padding:1px 6px;margin-left:5px;letter-spacing:.5px;vertical-align:middle}
+.site-nav-right{margin-left:auto;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.site-nav-signin{background:none;border:1px solid var(--b2);color:var(--t1);font-family:var(--sans);font-size:14px;font-weight:500;padding:8px 18px;border-radius:var(--r2);cursor:pointer;transition:all .2s}
+.site-nav-signin:hover{border-color:var(--b3);background:var(--b1)}
+.site-nav-cta{background:var(--lime);color:#0d0d18;font-family:var(--sans);font-size:14px;font-weight:700;padding:9px 20px;border-radius:var(--r2);border:none;cursor:pointer;transition:all .2s;letter-spacing:-.2px;white-space:nowrap}
+.site-nav-cta:hover{background:#d4fb7a;transform:translateY(-1px)}
+.site-nav-sep{width:1px;height:20px;background:var(--b2);margin:0 4px}
+
+/* ============ WEBSITE FOOTER ============ */
+.site-footer{background:var(--s1);border-top:1px solid var(--b1);padding:60px 40px 0}
+.site-footer-top{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:40px;max-width:1100px;margin:0 auto;padding-bottom:48px}
+.sf-brand{}
+.sf-brand-logo{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.sf-brand-icon{width:36px;height:36px;background:var(--lime);border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:14px;font-weight:700;color:#0d0d18}
+.sf-brand-name{font-size:17px;font-weight:700;letter-spacing:-.4px;color:var(--t1)}
+.sf-brand-name span{color:var(--lime)}
+.sf-brand-tagline{font-size:13px;color:var(--t2);line-height:1.7;max-width:260px;margin-bottom:24px}
+.sf-socials{display:flex;gap:8px}
+.sf-social{width:34px;height:34px;border-radius:var(--r1);border:1px solid var(--b2);display:flex;align-items:center;justify-content:center;color:var(--t3);font-size:14px;cursor:pointer;transition:all .2s;text-decoration:none}
+.sf-social:hover{border-color:var(--b3);color:var(--t1);background:var(--b1)}
+.sf-col-title{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--t1);letter-spacing:1px;text-transform:uppercase;margin-bottom:16px}
+.sf-links{display:flex;flex-direction:column;gap:10px}
+.sf-link{font-size:13px;color:var(--t2);text-decoration:none;cursor:pointer;transition:color .15s;display:flex;align-items:center;gap:5px}
+.sf-link:hover{color:var(--t1)}
+.sf-link-badge{font-size:9px;background:rgba(190,242,100,0.12);color:var(--lime);border:1px solid rgba(190,242,100,0.25);border-radius:3px;padding:1px 5px;font-weight:600;letter-spacing:.3px}
+.site-footer-bottom{border-top:1px solid var(--b1);max-width:1100px;margin:0 auto;padding:20px 0;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.sf-copyright{font-size:12px;color:var(--t3)}
+.sf-bottom-links{display:flex;gap:20px}
+.sf-bottom-link{font-size:12px;color:var(--t3);text-decoration:none;cursor:pointer;transition:color .15s}
+.sf-bottom-link:hover{color:var(--t2)}
+.sf-status{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--t3)}
+.sf-status-dot{width:7px;height:7px;border-radius:50%;background:#4ade80;flex-shrink:0;animation:pulse2 3s ease-in-out infinite}
+@keyframes pulse2{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* ============ DASHBOARD APP TOPBAR ============ */
+.dash-appbar{
+  height:56px;background:var(--s1);border-bottom:1px solid var(--b1);
+  display:flex;align-items:center;padding:0 20px;gap:16px;
+  position:sticky;top:0;z-index:50;
+}
+.dash-appbar-logo{display:flex;align-items:center;gap:8px;margin-right:8px}
+.dab-icon{width:26px;height:26px;background:var(--lime);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:700;color:#0d0d18;flex-shrink:0}
+.dab-wordmark{font-size:14px;font-weight:700;color:var(--t1);letter-spacing:-.3px}
+.dab-wordmark span{color:var(--lime)}
+.dash-appbar-sep{width:1px;height:20px;background:var(--b2);flex-shrink:0}
+.dash-appbar-links{display:flex;gap:0}
+.dab-link{background:none;border:none;font-family:var(--sans);font-size:13px;font-weight:500;color:var(--t2);padding:0 14px;height:56px;cursor:pointer;transition:color .15s;position:relative}
+.dab-link:hover{color:var(--t1)}
+.dab-link.act{color:var(--lime)}
+.dab-link.act::after{content:'';position:absolute;bottom:0;left:14px;right:14px;height:2px;background:var(--lime);border-radius:99px}
+.dash-appbar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.dab-notif{position:relative;width:34px;height:34px;border-radius:var(--r1);border:1px solid var(--b1);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t2);font-size:16px;background:none;transition:all .2s;flex-shrink:0}
+.dab-notif:hover{border-color:var(--b2);color:var(--t1)}
+.dab-notif-dot{position:absolute;top:7px;right:7px;width:7px;height:7px;border-radius:50%;background:var(--red);border:2px solid var(--s1)}
+.dab-new{background:var(--lime);color:#0d0d18;font-family:var(--sans);font-size:12px;font-weight:700;padding:7px 14px;border-radius:var(--r2);border:none;cursor:pointer;transition:background .2s;white-space:nowrap}
+.dab-new:hover{background:#d4fb7a}
+.dab-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--lime),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#0d0d18;cursor:pointer;flex-shrink:0;border:2px solid transparent;transition:border-color .2s}
+.dab-avatar:hover{border-color:var(--lime)}
+.dab-cmd{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r1);padding:5px 12px;font-family:var(--mono);font-size:11px;color:var(--t3);cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .2s;min-width:160px}
+.dab-cmd:hover{border-color:var(--b2);color:var(--t2)}
+.dab-cmd kbd{background:var(--b1);border:1px solid var(--b2);border-radius:3px;padding:1px 5px;font-size:10px}
+
+</style>
+</head>
+<body>
+
+<!-- SCREEN NAV -->
+<div class="screen-nav">
+  <div class="screen-nav-brand">SV /_</div>
+  <button class="screen-btn active" onclick="show('landing',this)">01 Landing</button>
+  <button class="screen-btn" onclick="show('auth',this)">02 Auth</button>
+  <button class="screen-btn" onclick="show('dashboard',this)">03 Dashboard</button>
+  <button class="screen-btn" onclick="show('create',this)">04 New Snippet</button>
+  <button class="screen-btn" onclick="show('detail',this)">05 Snippet View</button>
+  <button class="screen-btn" onclick="show('community',this)">06 Community</button>
+  <button class="screen-btn" onclick="show('settings',this)">07 Profile & Settings</button>
+  <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()"><span id="themeIcon">☀</span> <span id="themeLabel">Light</span></button>
+</div>
+
+<!-- ====== SCREEN: LANDING ====== -->
+<div class="screen-wrap active" id="s-landing">
+
+  <!-- WEBSITE NAVBAR -->
+  <nav class="site-nav">
+    <a class="site-nav-logo">
+      <div class="site-nav-icon">SV</div>
+      <span class="site-nav-wordmark">Snippet<span>Vault</span></span>
+    </a>
+    <div class="site-nav-links">
+      <button class="site-nav-link">Features</button>
+      <button class="site-nav-link">Pricing</button>
+      <button class="site-nav-link">Community</button>
+      <button class="site-nav-link">Changelog <span class="site-nav-badge">NEW</span></button>
+      <button class="site-nav-link">Docs</button>
+    </div>
+    <div class="site-nav-right">
+      <button class="site-nav-signin">Sign in</button>
+      <div class="site-nav-sep"></div>
+      <button class="site-nav-cta">Get started free →</button>
+    </div>
+  </nav>
+
+  <div class="land-hero">
+    <div class="land-grid"></div>
+    <div class="land-glow"></div>
+    <div class="land-eyebrow"><span></span>For developers who write good code</div>
+    <h1 class="land-h1">Your snippets.<br><em>Remembered forever.</em></h1>
+    <p class="land-sub">Save, organise, and share your code snippets. AI explains any snippet instantly. Your team's collective knowledge, searchable.</p>
+    <div class="land-ctas">
+      <button class="btn-primary">Start for free →</button>
+      <button class="btn-ghost">View community library</button>
+    </div>
+  </div>
+
+  <div class="land-demo">
+    <div class="demo-window">
+      <div class="demo-titlebar">
+        <div class="demo-dots"><div class="demo-dot dd-r"></div><div class="demo-dot dd-y"></div><div class="demo-dot dd-g"></div></div>
+        <div class="demo-title">snippetvault.dev — Dashboard</div>
+      </div>
+      <div class="demo-body">
+        <div class="demo-sidebar">
+          <div style="padding:10px 16px 16px;border-bottom:1px solid var(--b1);margin-bottom:4px">
+            <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--lime)">SV</div>
+          </div>
+          <div class="demo-snav-item act"><div class="dsi-dot" style="background:var(--lime)"></div><span>All snippets</span></div>
+          <div class="demo-snav-item"><div class="dsi-dot" style="background:var(--cyan)"></div><span>JavaScript</span></div>
+          <div class="demo-snav-item"><div class="dsi-dot" style="background:var(--yellow)"></div><span>Python</span></div>
+          <div class="demo-snav-item"><div class="dsi-dot" style="background:var(--orange)"></div><span>Rust</span></div>
+          <div class="demo-snav-item"><div class="dsi-dot" style="background:var(--purple)"></div><span>TypeScript</span></div>
+        </div>
+        <div class="demo-content">
+          <div class="demo-snip-cards">
+            <div class="demo-card">
+              <div class="dc-header"><span class="dc-lang lang-ts">TypeScript</span><span class="dc-copies">⎘ 234</span></div>
+              <div class="dc-code"><span class="kw">type</span> <span class="tp">ApiResponse</span>&lt;<span class="tp">T</span>&gt; = {<br>&nbsp;&nbsp;<span class="prop">data</span>: <span class="tp">T</span> | <span class="kw">null</span><br>&nbsp;&nbsp;<span class="prop">error</span>?: <span class="tp">string</span><br>&nbsp;&nbsp;<span class="prop">status</span>: <span class="num">200</span> | <span class="num">400</span> | <span class="num">500</span><br>}</div>
+              <div class="dc-footer"><span class="dc-tag">types</span><span class="dc-tag">api</span></div>
+            </div>
+            <div class="demo-card">
+              <div class="dc-header"><span class="dc-lang lang-py">Python</span><span class="dc-copies">⎘ 189</span></div>
+              <div class="dc-code"><span class="kw">def</span> <span class="fn">retry</span>(n=<span class="num">3</span>, delay=<span class="num">1.0</span>):<br>&nbsp;&nbsp;<span class="kw">def</span> <span class="fn">decorator</span>(func):<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">def</span> <span class="fn">wrapper</span>(*args):<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="cm"># retry logic</span></div>
+              <div class="dc-footer"><span class="dc-tag">decorator</span><span class="dc-tag">utils</span></div>
+            </div>
+            <div class="demo-card">
+              <div class="dc-header"><span class="dc-lang lang-go">Go</span><span class="dc-copies">⎘ 97</span></div>
+              <div class="dc-code"><span class="kw">func</span> <span class="fn">worker</span>(ctx <span class="tp">context.Context</span>,<br>&nbsp;&nbsp;jobs &lt;-<span class="kw">chan</span> <span class="tp">Job</span>) {<br>&nbsp;&nbsp;<span class="kw">for</span> {<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">select</span> {</div>
+              <div class="dc-footer"><span class="dc-tag">concurrency</span></div>
+            </div>
+            <div class="demo-card">
+              <div class="dc-header"><span class="dc-lang lang-rs">Rust</span><span class="dc-copies">⎘ 312</span></div>
+              <div class="dc-code"><span class="kw">impl</span>&lt;<span class="tp">T: Clone</span>&gt; <span class="tp">Stack</span>&lt;<span class="tp">T</span>&gt; {<br>&nbsp;&nbsp;<span class="kw">pub fn</span> <span class="fn">push</span>(&amp;<span class="kw">mut</span> <span class="kw">self</span>, v: <span class="tp">T</span>) {<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">self</span>.data.<span class="fn">push</span>(v)<br>&nbsp;&nbsp;}</div>
+              <div class="dc-footer"><span class="dc-tag">data-structures</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="land-features">
+    <div class="land-sec-label">Why SnippetVault</div>
+    <div class="land-sec-title">Everything a developer<br>actually needs</div>
+    <div class="feat-grid">
+      <div class="feat-item"><div class="feat-icon">✦</div><div class="feat-title">AI Explanations</div><div class="feat-desc">Select any snippet and get an instant, plain-English explanation. No more deciphering legacy code alone.</div></div>
+      <div class="feat-item"><div class="feat-icon">◈</div><div class="feat-title">Monaco Editor</div><div class="feat-desc">The same editor as VS Code. Syntax highlighting for 30+ languages, keyboard shortcuts, themes.</div></div>
+      <div class="feat-item"><div class="feat-icon">⊞</div><div class="feat-title">Smart Auto-Tagging</div><div class="feat-desc">Paste your code. AI reads it and tags it with relevant labels before you even save.</div></div>
+      <div class="feat-item"><div class="feat-icon">◇</div><div class="feat-title">Natural Language Search</div><div class="feat-desc">Type "JWT auth middleware" and find what you need. No exact-match required, ever.</div></div>
+      <div class="feat-item"><div class="feat-icon">⊗</div><div class="feat-title">Community Library</div><div class="feat-desc">Public snippets from developers worldwide. Copy any snippet in one click and track how often it's used.</div></div>
+      <div class="feat-item"><div class="feat-icon">△</div><div class="feat-title">Analytics</div><div class="feat-desc">Know which of your snippets people copy the most. Real data on your most valuable code.</div></div>
+    </div>
+  </div>
+
+  <div class="land-stats">
+    <div><div class="stat-num">48k</div><div class="stat-label">Snippets saved this month</div></div>
+    <div><div class="stat-num">12k</div><div class="stat-label">Developers using it daily</div></div>
+    <div><div class="stat-num">300k</div><div class="stat-label">One-click copies served</div></div>
+  </div>
+
+  <div class="land-bottom-cta">
+    <h2>Your code. <em style="font-family:var(--serif);font-style:italic">Always at hand.</em></h2>
+    <p>Stop re-searching for the same patterns. Start building your personal library.</p>
+    <button class="btn-primary">Create free account →</button>
+  </div>
+
+  <!-- WEBSITE FOOTER -->
+  <footer class="site-footer">
+    <div class="site-footer-top">
+      <div class="sf-brand">
+        <div class="sf-brand-logo">
+          <div class="sf-brand-icon">SV</div>
+          <span class="sf-brand-name">Snippet<span>Vault</span></span>
+        </div>
+        <p class="sf-brand-tagline">Save, organise, and share your code snippets. AI-powered explanations, Monaco Editor, community library.</p>
+        <div class="sf-socials">
+          <a class="sf-social" title="GitHub">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          </a>
+          <a class="sf-social" title="Twitter / X">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.742l7.776-8.906L1.72 2.25H8.08l4.263 5.635 5.9-5.635zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          </a>
+          <a class="sf-social" title="Discord">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <div>
+        <div class="sf-col-title">Product</div>
+        <div class="sf-links">
+          <a class="sf-link">Features</a>
+          <a class="sf-link">Pricing</a>
+          <a class="sf-link">Changelog <span class="sf-link-badge">NEW</span></a>
+          <a class="sf-link">Roadmap</a>
+          <a class="sf-link">API</a>
+        </div>
+      </div>
+
+      <div>
+        <div class="sf-col-title">Community</div>
+        <div class="sf-links">
+          <a class="sf-link">Explore Snippets</a>
+          <a class="sf-link">Trending</a>
+          <a class="sf-link">Top Authors</a>
+          <a class="sf-link">Discord</a>
+          <a class="sf-link">GitHub</a>
+        </div>
+      </div>
+
+      <div>
+        <div class="sf-col-title">Resources</div>
+        <div class="sf-links">
+          <a class="sf-link">Documentation</a>
+          <a class="sf-link">Blog</a>
+          <a class="sf-link">Guides</a>
+          <a class="sf-link">Integrations</a>
+          <a class="sf-link">Status <span class="sf-link-badge" style="background:rgba(74,222,128,0.12);color:#4ade80;border-color:rgba(74,222,128,0.25)">●&nbsp;UP</span></a>
+        </div>
+      </div>
+
+      <div>
+        <div class="sf-col-title">Company</div>
+        <div class="sf-links">
+          <a class="sf-link">About</a>
+          <a class="sf-link">Privacy Policy</a>
+          <a class="sf-link">Terms of Service</a>
+          <a class="sf-link">Security</a>
+          <a class="sf-link">Contact</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="site-footer-bottom">
+      <span class="sf-copyright">© 2025 SnippetVault. Built by <strong style="color:var(--t2)">Nihal Sheikh</strong>.</span>
+      <div class="sf-status">
+        <div class="sf-status-dot"></div>
+        All systems operational
+      </div>
+      <div class="sf-bottom-links">
+        <a class="sf-bottom-link">Privacy</a>
+        <a class="sf-bottom-link">Terms</a>
+        <a class="sf-bottom-link">Cookies</a>
+        <a class="sf-bottom-link">Sitemap</a>
+      </div>
+    </div>
+  </footer>
+
+</div>
+
+<!-- ====== SCREEN: AUTH ====== -->
+<div class="screen-wrap" id="s-auth">
+  <div class="auth-wrap">
+    <div class="auth-left">
+      <div class="auth-logo">SnippetVault <span style="color:var(--t4)">/_</span></div>
+      <h1 class="auth-h1">Welcome back,<br>developer.</h1>
+      <p class="auth-sub">Your snippets are waiting. Sign in to continue.</p>
+      <div class="auth-tabs">
+        <button class="auth-tab act" id="tab-login" onclick="authToggle('login')">Sign In</button>
+        <button class="auth-tab" id="tab-signup" onclick="authToggle('signup')">Create Account</button>
+      </div>
+      <div id="auth-form-login">
+        <div class="form-group">
+          <label class="form-label">Email address</label>
+          <input class="form-input" type="email" placeholder="you@example.com"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input class="form-input" type="password" placeholder="••••••••••"/>
+          <div class="form-hint" style="text-align:right;margin-top:6px"><a href="#" style="color:var(--lime);font-size:11px;text-decoration:none">Forgot password?</a></div>
+        </div>
+        <button class="btn-full">Sign in →</button>
+      </div>
+      <div id="auth-form-signup" style="display:none">
+        <div class="form-group">
+          <label class="form-label">Full name</label>
+          <input class="form-input" type="text" placeholder="Nihal Sheikh"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Username</label>
+          <input class="form-input" type="text" placeholder="nihalsheikh"/>
+          <div class="form-hint">snippetvault.dev/@nihalsheikh</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email address</label>
+          <input class="form-input" type="email" placeholder="you@example.com"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input class="form-input" type="password" placeholder="min. 8 characters"/>
+          <div class="form-hint">Must contain uppercase, number, and special character</div>
+        </div>
+        <button class="btn-full">Create account →</button>
+      </div>
+      <div class="auth-divider">or continue with</div>
+      <button class="oauth-btn"><span style="font-family:var(--mono);font-size:16px">⌥</span> Continue with GitHub</button>
+      <button class="oauth-btn"><span style="font-family:var(--mono);font-size:16px">◍</span> Continue with Google</button>
+      <div class="auth-switch" id="auth-switch-text">Don't have an account? <a href="#" onclick="authToggle('signup');return false">Create one →</a></div>
+    </div>
+    <div class="auth-right">
+      <div class="auth-right-grid"></div>
+      <div class="auth-right-glow"></div>
+      <div style="position:relative;margin-bottom:32px">
+        <div style="font-size:14px;color:var(--t2);margin-bottom:6px;font-family:var(--mono)">// Most copied this week</div>
+        <div style="font-family:var(--serif);font-size:22px;color:var(--t1);letter-spacing:-.4px">Join 12,000 developers<br>saving time every day</div>
+      </div>
+      <div class="auth-float-cards">
+        <div class="afc">
+          <div class="afc-header"><span class="dc-lang lang-ts">TypeScript</span><div style="margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--t3)">⎘ 1,204 copies</div></div>
+          <div class="afc-code"><span class="kw">const</span> <span class="fn">useDebounce</span> = &lt;<span class="tp">T</span>&gt;(value: <span class="tp">T</span>, delay: <span class="num">number</span>): <span class="tp">T</span> =&gt; {<br>&nbsp;&nbsp;<span class="kw">const</span> [debounced, setDebounced] = <span class="fn">useState</span>(value)<br>&nbsp;&nbsp;<span class="fn">useEffect</span>(() =&gt; { <span class="cm">/* ... */</span> }, [value, delay])<br>}</div>
+          <div style="margin-top:8px;display:flex;gap:4px"><span class="dc-tag">hooks</span><span class="dc-tag">typescript</span><span class="dc-tag">react</span></div>
+        </div>
+        <div class="afc">
+          <div class="afc-header"><span class="dc-lang lang-py">Python</span><div style="margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--t3)">⎘ 847 copies</div></div>
+          <div class="afc-code"><span class="kw">from</span> functools <span class="kw">import</span> wraps<br><span class="kw">def</span> <span class="fn">timer</span>(func):<br>&nbsp;&nbsp;@<span class="fn">wraps</span>(func)<br>&nbsp;&nbsp;<span class="kw">def</span> <span class="fn">wrapper</span>(*args, **kwargs): ...</div>
+        </div>
+        <div class="afc">
+          <div class="afc-header"><span class="dc-lang lang-go">Go</span><div style="margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--t3)">⎘ 623 copies</div></div>
+          <div class="afc-code"><span class="kw">func</span> <span class="fn">withTimeout</span>(ctx <span class="tp">context.Context</span>, d <span class="tp">time.Duration</span>,<br>&nbsp;&nbsp;fn <span class="kw">func</span>() <span class="tp">error</span>) <span class="tp">error</span> {<br>&nbsp;&nbsp;ctx, cancel := context.<span class="fn">WithTimeout</span>(ctx, d) ...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== SCREEN: DASHBOARD ====== -->
+<div class="screen-wrap" id="s-dashboard">
+
+  <!-- DASHBOARD APP TOPBAR -->
+  <div class="dash-appbar">
+    <div class="dash-appbar-logo">
+      <div class="dab-icon">SV</div>
+      <span class="dab-wordmark">Snippet<span>Vault</span></span>
+    </div>
+    <div class="dash-appbar-sep"></div>
+    <div class="dash-appbar-links">
+      <button class="dab-link act">My Snippets</button>
+      <button class="dab-link">Community</button>
+      <button class="dab-link">Explore</button>
+    </div>
+    <div class="dash-appbar-right">
+      <button class="dab-cmd">
+        <span>⌕</span>
+        <span style="flex:1">Search snippets...</span>
+        <kbd>⌘K</kbd>
+      </button>
+      <button class="dab-notif">
+        🔔
+        <div class="dab-notif-dot"></div>
+      </button>
+      <button class="dab-new">+ New snippet</button>
+      <div class="dab-sep" style="width:1px;height:20px;background:var(--b2)"></div>
+      <div class="dab-avatar">NS</div>
+    </div>
+  </div>
+
+  <div class="dash-layout" style="min-height:calc(100vh - 56px)">
+    <div class="dash-sidebar">
+      <div class="dash-user">
+        <div class="dash-avatar">NS</div>
+        <div>
+          <div class="dash-username">Nihal Sheikh</div>
+          <div class="dash-handle" style="font-family:var(--mono)">@nihalsheikh</div>
+        </div>
+      </div>
+      <div class="dash-nav-section">
+        <div class="dash-nav-label">Library</div>
+        <div class="dash-nav-item act"><span class="dash-nav-icon">▦</span> All Snippets <span class="dash-nav-count">48</span></div>
+        <div class="dash-nav-item"><span class="dash-nav-icon">♡</span> Favourites <span class="dash-nav-count">12</span></div>
+        <div class="dash-nav-item"><span class="dash-nav-icon">⊗</span> Public <span class="dash-nav-count">24</span></div>
+        <div class="dash-nav-item"><span class="dash-nav-icon">◇</span> Private <span class="dash-nav-count">24</span></div>
+      </div>
+      <div class="dash-nav-section">
+        <div class="dash-nav-label">Languages</div>
+        <div class="dash-nav-item"><span style="color:var(--cyan)">◉</span> TypeScript <span class="dash-nav-count">18</span></div>
+        <div class="dash-nav-item"><span style="color:var(--yellow)">◉</span> Python <span class="dash-nav-count">14</span></div>
+        <div class="dash-nav-item"><span style="color:var(--orange)">◉</span> Rust <span class="dash-nav-count">6</span></div>
+        <div class="dash-nav-item"><span style="color:var(--pink)">◉</span> Go <span class="dash-nav-count">5</span></div>
+        <div class="dash-nav-item"><span style="color:var(--purple)">◉</span> SQL <span class="dash-nav-count">5</span></div>
+      </div>
+      <div class="dash-nav-section">
+        <div class="dash-nav-label">Community</div>
+        <div class="dash-nav-item"><span class="dash-nav-icon">◈</span> Explore <span class="dash-nav-new">NEW</span></div>
+        <div class="dash-nav-item"><span class="dash-nav-icon">↗</span> Trending</div>
+      </div>
+      <div class="dash-sidebar-footer">
+        <div class="dash-plan">FREE PLAN</div>
+        <div style="font-size:11px;color:var(--t3);margin-top:8px">48/100 snippets used</div>
+        <div style="height:3px;background:var(--b1);border-radius:2px;margin-top:6px;overflow:hidden"><div style="height:100%;width:48%;background:var(--lime);border-radius:2px"></div></div>
+      </div>
+    </div>
+    <div class="dash-main">
+      <div class="dash-topbar">
+        <div class="dash-search">
+          <span class="dash-search-icon">⌕</span>
+          <input placeholder="Search snippets... try 'JWT auth' or 'async retry'"/>
+        </div>
+        <div style="margin-left:auto;display:flex;gap:8px">
+          <button class="btn-ghost" style="font-size:12px;padding:8px 16px">⊞ New Snippet</button>
+          <button class="btn-primary" style="font-size:12px;padding:8px 16px">+ Add</button>
+        </div>
+      </div>
+
+      <div class="dash-stats">
+        <div class="dash-stat-card"><div class="dsc-label">TOTAL SNIPPETS</div><div class="dsc-num" style="color:var(--t1)">48</div><div class="dsc-change">↑ 3 this week</div></div>
+        <div class="dash-stat-card"><div class="dsc-label">TOTAL COPIES</div><div class="dsc-num" style="color:var(--lime)">1,284</div><div class="dsc-change">↑ 47 this week</div></div>
+        <div class="dash-stat-card"><div class="dsc-label">MOST COPIED</div><div class="dsc-num" style="font-size:14px;font-family:var(--mono);color:var(--cyan);margin-top:4px">useDebounce</div><div class="dsc-change" style="color:var(--t3)">312 copies all time</div></div>
+        <div class="dash-stat-card"><div class="dsc-label">AI EXPLAINS USED</div><div class="dsc-num" style="color:var(--purple)">23</div><div class="dsc-change" style="color:var(--t3)">this month</div></div>
+      </div>
+
+      <div class="dash-filters">
+        <span class="dash-filter-chip act">All</span>
+        <span class="dash-filter-chip">TypeScript</span>
+        <span class="dash-filter-chip">Python</span>
+        <span class="dash-filter-chip">Rust</span>
+        <span class="dash-filter-chip">Go</span>
+        <span class="dash-filter-chip">SQL</span>
+        <div class="dash-sort">Sort: <select><option>Recently added</option><option>Most copied</option><option>A-Z</option></select></div>
+      </div>
+
+      <div class="snip-grid">
+        <div class="snip-card">
+          <div class="sc-head"><div class="sc-icon" style="background:rgba(34,211,238,0.1)">⌗</div><div class="sc-info"><div class="sc-title">useDebounce hook</div><div class="sc-desc">Debounce any value with configurable delay</div></div><div class="sc-menu">⋯</div></div>
+          <div class="sc-code"><span class="kw">const</span> <span class="fn">useDebounce</span> = &lt;<span class="tp">T</span>&gt;(value: <span class="tp">T</span>, delay: <span class="tp">number</span>) =&gt; {<br>&nbsp;&nbsp;<span class="kw">const</span> [debouncedValue, setDebounced] = <span class="fn">useState</span>&lt;<span class="tp">T</span>&gt;(value)<br>&nbsp;&nbsp;<span class="fn">useEffect</span>(() =&gt; { ... }, [value, delay])<br>&nbsp;&nbsp;<span class="kw">return</span> debouncedValue<br>}</div>
+          <div class="sc-foot"><span class="sc-tag">hooks</span><span class="sc-tag">typescript</span><span class="sc-tag">react</span><div class="sc-meta"><span class="sc-pub" title="Public">◎ 312</span></div></div>
+        </div>
+        <div class="snip-card">
+          <div class="sc-head"><div class="sc-icon" style="background:rgba(250,204,21,0.1)">⌘</div><div class="sc-info"><div class="sc-title">Python retry decorator</div><div class="sc-desc">Retry a function N times with exponential backoff</div></div><div class="sc-menu">⋯</div></div>
+          <div class="sc-code"><span class="kw">def</span> <span class="fn">retry</span>(n=<span class="num">3</span>, delay=<span class="num">1.0</span>, backoff=<span class="num">2</span>):<br>&nbsp;&nbsp;<span class="kw">def</span> <span class="fn">decorator</span>(func):<br>&nbsp;&nbsp;&nbsp;&nbsp;@<span class="fn">wraps</span>(func)<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">def</span> <span class="fn">wrapper</span>(*args, **kwargs): ...</div>
+          <div class="sc-foot"><span class="sc-tag">decorator</span><span class="sc-tag">utils</span><div class="sc-meta"><span style="color:var(--t4)">◈ private</span></div></div>
+        </div>
+        <div class="snip-card">
+          <div class="sc-head"><div class="sc-icon" style="background:rgba(167,139,250,0.1)">⊞</div><div class="sc-info"><div class="sc-title">JWT verify middleware</div><div class="sc-desc">Express middleware to verify JWT access tokens</div></div><div class="sc-menu">⋯</div></div>
+          <div class="sc-code"><span class="kw">export const</span> <span class="fn">authMiddleware</span> = (<br>&nbsp;&nbsp;req: <span class="tp">Request</span>, res: <span class="tp">Response</span>, next: <span class="tp">NextFunction</span><br>) =&gt; {<br>&nbsp;&nbsp;<span class="kw">const</span> token = req.headers.<span class="prop">authorization</span>?.split(<span class="str">' '</span>)[<span class="num">1</span>]</div>
+          <div class="sc-foot"><span class="sc-tag">express</span><span class="sc-tag">jwt</span><span class="sc-tag">auth</span><div class="sc-meta"><span class="sc-pub">◎ 89</span></div></div>
+        </div>
+        <div class="snip-card">
+          <div class="sc-head"><div class="sc-icon" style="background:rgba(251,146,60,0.1)">△</div><div class="sc-info"><div class="sc-title">Rust channel worker</div><div class="sc-desc">Thread-safe worker pool with MPSC channels</div></div><div class="sc-menu">⋯</div></div>
+          <div class="sc-code"><span class="kw">fn</span> <span class="fn">spawn_worker</span>(rx: <span class="tp">Receiver</span>&lt;<span class="tp">Job</span>&gt;) -&gt; <span class="tp">JoinHandle</span>&lt;()&gt; {<br>&nbsp;&nbsp;thread::<span class="fn">spawn</span>(<span class="kw">move</span> || {<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">while let</span> <span class="tp">Ok</span>(job) = rx.<span class="fn">recv</span>() { ... }<br>&nbsp;&nbsp;})<br>}</div>
+          <div class="sc-foot"><span class="sc-tag">concurrency</span><span class="sc-tag">rust</span><div class="sc-meta"><span class="sc-pub">◎ 44</span></div></div>
+        </div>
+        <div class="snip-card">
+          <div class="sc-head"><div class="sc-icon" style="background:rgba(74,222,128,0.1)">◈</div><div class="sc-info"><div class="sc-title">Prisma paginate helper</div><div class="sc-desc">Cursor-based pagination for Prisma queries</div></div><div class="sc-menu">⋯</div></div>
+          <div class="sc-code"><span class="kw">async function</span> <span class="fn">paginate</span>&lt;<span class="tp">T</span>&gt;(<br>&nbsp;&nbsp;model: <span class="tp">any</span>, cursor?: <span class="tp">string</span>, take = <span class="num">20</span><br>) {<br>&nbsp;&nbsp;<span class="kw">return</span> model.<span class="fn">findMany</span>({ take, ...(cursor && {...}) })</div>
+          <div class="sc-foot"><span class="sc-tag">prisma</span><span class="sc-tag">postgres</span><div class="sc-meta"><span class="sc-pub">◎ 67</span></div></div>
+        </div>
+        <div class="snip-card" style="border-style:dashed;display:flex;align-items:center;justify-content:center;min-height:160px;cursor:pointer">
+          <div style="text-align:center;color:var(--t3)">
+            <div style="font-size:28px;margin-bottom:8px">+</div>
+            <div style="font-size:12px;font-family:var(--mono)">New snippet</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== SCREEN: CREATE ====== -->
+<div class="screen-wrap" id="s-create">
+  <div class="create-layout">
+    <div class="create-editor">
+      <div class="create-editor-head">
+        <div class="ced-tab act"><div class="ced-lang-dot" style="background:var(--cyan)"></div>useDebounce.ts</div>
+        <div class="ced-tab"><div class="ced-lang-dot" style="background:var(--t4)"></div>+ New</div>
+      </div>
+      <div class="create-code-area" style="flex:1;position:relative;min-height:500px">
+        <div class="line-nums">
+          <div class="ln">1</div><div class="ln">2</div><div class="ln">3</div><div class="ln">4</div><div class="ln">5</div>
+          <div class="ln">6</div><div class="ln">7</div><div class="ln">8</div><div class="ln">9</div><div class="ln">10</div>
+          <div class="ln">11</div><div class="ln">12</div><div class="ln">13</div><div class="ln">14</div><div class="ln">15</div>
+          <div class="ln" style="background:rgba(190,242,100,0.06);color:var(--lime)">16</div>
+          <div class="ln">17</div><div class="ln">18</div>
+        </div>
+        <div class="code-content">
+<span class="kw">import</span> { <span class="fn">useState</span>, <span class="fn">useEffect</span> } <span class="kw">from</span> <span class="str">'react'</span><br><br>
+<span class="cm">/**</span><br>
+<span class="cm"> * Debounce any value by a given delay.</span><br>
+<span class="cm"> * Useful for search inputs, API calls on keystroke.</span><br>
+<span class="cm"> */</span><br>
+<span class="kw">export function</span> <span class="fn">useDebounce</span>&lt;<span class="tp">T</span>&gt;(<br>
+&nbsp;&nbsp;value: <span class="tp">T</span>,<br>
+&nbsp;&nbsp;delay: <span class="tp">number</span> = <span class="num">500</span><br>
+): <span class="tp">T</span> {<br>
+&nbsp;&nbsp;<span class="kw">const</span> [debouncedValue, setDebouncedValue] = <span class="fn">useState</span>&lt;<span class="tp">T</span>&gt;(value)<br><br>
+&nbsp;&nbsp;<span class="fn">useEffect</span>(() =&gt; {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">const</span> timer = <span class="fn">setTimeout</span>(() =&gt; {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="fn">setDebouncedValue</span>(value)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}, delay)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> () =&gt; <span class="fn">clearTimeout</span>(timer) <span class="cm">// cleanup ← cursor here</span><br>
+&nbsp;&nbsp;}, [value, delay])<br><br>
+&nbsp;&nbsp;<span class="kw">return</span> debouncedValue<br>
+}
+        </div>
+      </div>
+      <div class="create-bottom-bar">
+        <div class="cbb-info">
+          <span>TypeScript</span>
+          <span>20 lines</span>
+          <span>UTF-8</span>
+          <span>LF</span>
+        </div>
+        <div class="cbb-ai-btn">✦ Explain with AI</div>
+      </div>
+    </div>
+    <div class="create-panel">
+      <div class="cp-section">
+        <div class="cp-label">Title</div>
+        <input class="cp-input" value="useDebounce hook"/>
+      </div>
+      <div class="cp-section">
+        <div class="cp-label">Description <span style="color:var(--t4);font-size:10px;font-weight:400">optional</span></div>
+        <textarea class="cp-textarea" placeholder="What does this snippet do?">Debounce any value with configurable delay. Ideal for search inputs to avoid API call on every keystroke.</textarea>
+      </div>
+      <div class="cp-section">
+        <div class="cp-label">Language</div>
+        <div class="cp-lang-grid">
+          <div class="cp-lang-opt act">TypeScript</div>
+          <div class="cp-lang-opt">JavaScript</div>
+          <div class="cp-lang-opt">Python</div>
+          <div class="cp-lang-opt">Rust</div>
+          <div class="cp-lang-opt">Go</div>
+          <div class="cp-lang-opt">SQL</div>
+        </div>
+      </div>
+      <div class="cp-section">
+        <div class="cp-label">Tags <span style="color:var(--t4);font-size:10px;font-weight:400">press Enter</span></div>
+        <div class="cp-tag-input">
+          <span class="cp-tag">hooks <span class="cp-tag-x">×</span></span>
+          <span class="cp-tag">typescript <span class="cp-tag-x">×</span></span>
+          <span class="cp-tag">react <span class="cp-tag-x">×</span></span>
+          <span class="cp-tag">debounce <span class="cp-tag-x">×</span></span>
+        </div>
+      </div>
+      <div class="cp-section">
+        <div class="cp-label">Visibility</div>
+        <div class="vis-toggle">
+          <div class="vis-opt act">◎ Public</div>
+          <div class="vis-opt">◈ Private</div>
+        </div>
+      </div>
+      <div class="cp-section">
+        <div class="cp-label" style="color:var(--purple);border-bottom:none;margin-bottom:0">✦ AI Explanation</div>
+        <div class="ai-explain-panel">
+          <div class="aep-label">✦ Generated explanation</div>
+          <div class="aep-text">This hook wraps React's <code style="background:rgba(167,139,250,0.12);padding:1px 4px;border-radius:3px;font-size:11px;color:var(--purple)">useState</code> and <code style="background:rgba(167,139,250,0.12);padding:1px 4px;border-radius:3px;font-size:11px;color:var(--purple)">useEffect</code> to delay updating a value until the input stops changing for <code style="background:rgba(167,139,250,0.12);padding:1px 4px;border-radius:3px;font-size:11px;color:var(--purple)">delay</code> ms. The cleanup function clears the previous timer on each render, ensuring only the final value triggers an update.</div>
+        </div>
+      </div>
+      <div class="create-actions">
+        <button class="btn-save">Publish snippet →</button>
+        <button class="btn-draft">Save as draft</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== SCREEN: DETAIL ====== -->
+<div class="screen-wrap" id="s-detail">
+  <div class="detail-layout">
+    <div>
+      <div class="detail-head">
+        <div class="detail-breadcrumb"><a href="#">Library</a> <span>/</span> <a href="#">TypeScript</a> <span>/</span> useDebounce hook</div>
+        <h1 class="detail-title">useDebounce hook</h1>
+        <p class="detail-desc">Debounce any value with configurable delay. Ideal for search inputs to avoid API calls on every keystroke.</p>
+        <div class="detail-meta">
+          <div class="detail-author"><div class="det-avatar">NS</div><span style="font-weight:500">nihalsheikh</span></div>
+          <div class="detail-stat">⎘ <strong>312</strong> copies</div>
+          <div class="detail-stat">◎ Public</div>
+          <div class="detail-stat">Updated 2d ago</div>
+          <span class="detail-tag">hooks</span><span class="detail-tag">typescript</span><span class="detail-tag">react</span>
+        </div>
+      </div>
+
+      <div class="detail-code-block">
+        <div class="dcb-bar">
+          <span class="dcb-lang">TypeScript</span>
+          <span class="dcb-filename">useDebounce.ts</span>
+          <div class="dcb-actions">
+            <button class="dcb-btn">⊞ Raw</button>
+            <button class="dcb-btn">↗ Share</button>
+            <button class="dcb-btn lim">⎘ Copy snippet</button>
+          </div>
+        </div>
+        <div class="dcb-code">
+          <div class="dcb-lns" style="font-size:12px;line-height:1.8;color:var(--t4)">1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>10<br>11<br>12<br>13<br>14<br>15<br>16<br>17<br>18<br>19<br>20</div>
+          <div style="font-size:13px;line-height:1.8;color:var(--t2)">
+<span class="kw">import</span> { <span class="fn">useState</span>, <span class="fn">useEffect</span> } <span class="kw">from</span> <span class="str">'react'</span><br><br>
+<span class="cm">/**</span><br>
+<span class="cm"> * Debounce any value by a given delay.</span><br>
+<span class="cm"> */</span><br>
+<span class="kw">export function</span> <span class="fn">useDebounce</span>&lt;<span class="tp">T</span>&gt;(<br>
+&nbsp;&nbsp;value: <span class="tp">T</span>,<br>
+&nbsp;&nbsp;delay: <span class="tp">number</span> = <span class="num">500</span><br>
+): <span class="tp">T</span> {<br>
+&nbsp;&nbsp;<span class="kw">const</span> [debouncedValue, setDebouncedValue] = <span class="fn">useState</span>&lt;<span class="tp">T</span>&gt;(value)<br><br>
+&nbsp;&nbsp;<span class="fn">useEffect</span>(() =&gt; {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">const</span> timer = <span class="fn">setTimeout</span>(() =&gt; {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="fn">setDebouncedValue</span>(value)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}, delay)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> () =&gt; <span class="fn">clearTimeout</span>(timer)<br>
+&nbsp;&nbsp;}, [value, delay])<br><br>
+&nbsp;&nbsp;<span class="kw">return</span> debouncedValue<br>
+}
+          </div>
+        </div>
+      </div>
+
+      <!-- Comments -->
+      <div style="margin-top:28px">
+        <div style="font-size:14px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:8px">Comments <span style="font-family:var(--mono);font-size:11px;color:var(--t3);background:var(--b1);padding:2px 7px;border-radius:4px">3</span></div>
+        <div style="display:flex;gap:12px;margin-bottom:20px">
+          <div class="det-avatar" style="width:32px;height:32px;font-size:11px">NS</div>
+          <input style="flex:1;background:var(--s2);border:1px solid var(--b1);border-radius:var(--r2);padding:10px 14px;color:var(--t1);font-size:13px;font-family:var(--sans);outline:none" placeholder="Add a comment..."/>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;gap:12px"><div class="det-avatar" style="width:28px;height:28px;font-size:10px;flex-shrink:0;background:linear-gradient(135deg,var(--purple),var(--pink))">AR</div><div style="flex:1"><div style="font-size:12px;font-weight:600;margin-bottom:3px">aarav_r <span style="color:var(--t3);font-weight:400;font-family:var(--mono)">2h ago</span></div><div style="font-size:13px;color:var(--t2);line-height:1.65">This is exactly what I needed — the cleanup function is the part everyone forgets. Saved me from a nasty stale closure bug.</div></div></div>
+          <div style="display:flex;gap:12px"><div class="det-avatar" style="width:28px;height:28px;font-size:10px;flex-shrink:0;background:linear-gradient(135deg,var(--cyan),var(--lime))">PK</div><div style="flex:1"><div style="font-size:12px;font-weight:600;margin-bottom:3px">priya_k <span style="color:var(--t3);font-weight:400;font-family:var(--mono)">1d ago</span></div><div style="font-size:13px;color:var(--t2);line-height:1.65">Would love to see a version with a leading-edge option (fire immediately, then debounce). Anyone have that?</div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-right">
+      <div class="ai-block">
+        <div class="ai-block-head"><div class="ai-block-icon">✦</div><div class="ai-block-label">AI Explanation</div></div>
+        <div class="ai-block-text">
+          This hook delays a value update until the input stops changing for a set duration.<br><br>
+          <span class="hi">How it works:</span> Each time <code style="background:rgba(167,139,250,0.1);padding:1px 4px;border-radius:3px;font-size:11px">value</code> changes, <code style="background:rgba(167,139,250,0.1);padding:1px 4px;border-radius:3px;font-size:11px">useEffect</code> sets a new timer. If <code style="background:rgba(167,139,250,0.1);padding:1px 4px;border-radius:3px;font-size:11px">value</code> changes again before the timer fires, the previous timer is cleared by the cleanup function — restarting the clock.<br><br>
+          <span class="hi">Generic type T:</span> Accepts any type — works for strings, numbers, or objects without casting.<br><br>
+          <span class="hi">Common use:</span> Pair with a <code style="background:rgba(167,139,250,0.1);padding:1px 4px;border-radius:3px;font-size:11px">useEffect</code> watching the returned value to fire an API call only when the user stops typing.
+        </div>
+      </div>
+      <div class="dr-card">
+        <div class="dr-card-title">Details</div>
+        <table style="width:100%;font-size:12px;border-collapse:collapse">
+          <tr><td style="color:var(--t3);padding:5px 0">Language</td><td style="text-align:right;color:var(--cyan);font-family:var(--mono)">TypeScript</td></tr>
+          <tr><td style="color:var(--t3);padding:5px 0">Lines</td><td style="text-align:right;font-family:var(--mono)">20</td></tr>
+          <tr><td style="color:var(--t3);padding:5px 0">Visibility</td><td style="text-align:right;color:var(--lime)">◎ Public</td></tr>
+          <tr><td style="color:var(--t3);padding:5px 0">Copies</td><td style="text-align:right;font-family:var(--mono);font-weight:600">312</td></tr>
+          <tr><td style="color:var(--t3);padding:5px 0">Created</td><td style="text-align:right;color:var(--t2)">14 Mar 2025</td></tr>
+        </table>
+      </div>
+      <div class="dr-card">
+        <div class="dr-card-title">Similar snippets</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px;border-radius:var(--r1);transition:background .15s" onmouseover="this.style.background='var(--b1)'" onmouseout="this.style.background='transparent'">
+            <span style="font-family:var(--mono);font-size:10px;background:rgba(34,211,238,0.1);color:var(--cyan);padding:2px 6px;border-radius:3px">TS</span>
+            <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">useThrottle hook</div><div style="font-size:10px;color:var(--t3);font-family:var(--mono)">⎘ 189</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px;border-radius:var(--r1);transition:background .15s" onmouseover="this.style.background='var(--b1)'" onmouseout="this.style.background='transparent'">
+            <span style="font-family:var(--mono);font-size:10px;background:rgba(34,211,238,0.1);color:var(--cyan);padding:2px 6px;border-radius:3px">TS</span>
+            <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">usePrevious hook</div><div style="font-size:10px;color:var(--t3);font-family:var(--mono)">⎘ 94</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== SCREEN: COMMUNITY ====== -->
+<div class="screen-wrap" id="s-community">
+  <div class="comm-head">
+    <div class="comm-head-inner">
+      <div class="comm-h1">Community Library</div>
+      <p class="comm-sub">Thousands of battle-tested snippets from developers worldwide. Copy anything in one click.</p>
+      <div class="comm-search-bar">
+        <input class="comm-search-input" placeholder="Search by language, pattern, keyword... try 'postgres pagination'"/>
+        <button class="comm-search-btn">Search</button>
+      </div>
+    </div>
+  </div>
+  <div class="comm-body">
+    <div class="comm-featured">
+      <div class="comm-sec-label">Trending this week</div>
+      <div class="comm-featured-grid">
+        <div class="snip-card" style="border-color:rgba(190,242,100,0.15)">
+          <div style="background:rgba(190,242,100,0.05);border-bottom:1px solid rgba(190,242,100,0.1);padding:3px 10px;font-size:9px;font-family:var(--mono);color:var(--lime);letter-spacing:1px">🔥 TRENDING #1</div>
+          <div class="sc-head"><div class="sc-icon" style="background:rgba(34,211,238,0.1)">⌗</div><div class="sc-info"><div class="sc-title">Zod + Express validator</div><div class="sc-desc">Type-safe request body validation middleware</div></div></div>
+          <div class="sc-code"><span class="kw">const</span> <span class="fn">validate</span> = (schema: <span class="tp">ZodSchema</span>) =&gt;<br>&nbsp;&nbsp;(<span class="tp">req</span>, <span class="tp">res</span>, <span class="tp">next</span>) =&gt; {<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">const</span> result = schema.<span class="fn">safeParse</span>(req.body)<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> (!result.success) <span class="kw">return</span> ...</div>
+          <div class="sc-foot"><span class="sc-tag">zod</span><span class="sc-tag">express</span><div class="sc-meta"><span class="sc-pub">⎘ 2,304</span></div></div>
+        </div>
+        <div class="snip-card">
+          <div class="sc-head"><div class="sc-icon" style="background:rgba(250,204,21,0.1)">⌘</div><div class="sc-info"><div class="sc-title">FastAPI dependency injection</div><div class="sc-desc">Reusable DB session per request with cleanup</div></div></div>
+          <div class="sc-code"><span class="kw">async def</span> <span class="fn">get_db</span>() -&gt; <span class="tp">AsyncGenerator</span>:<br>&nbsp;&nbsp;<span class="kw">async with</span> <span class="fn">AsyncSession</span>(engine) <span class="kw">as</span> session:<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">try</span>:<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">yield</span> session</div>
+          <div class="sc-foot"><span class="sc-tag">fastapi</span><span class="sc-tag">sqlalchemy</span><div class="sc-meta"><span class="sc-pub">⎘ 1,876</span></div></div>
+        </div>
+        <div class="snip-card">
+          <div class="sc-head"><div class="sc-icon" style="background:rgba(167,139,250,0.1)">▦</div><div class="sc-info"><div class="sc-title">Next.js server action pattern</div><div class="sc-desc">Form mutation with validation and error state</div></div></div>
+          <div class="sc-code"><span class="str">'use server'</span><br><span class="kw">export async function</span> <span class="fn">createPost</span>(<br>&nbsp;&nbsp;prevState: <span class="tp">State</span>, formData: <span class="tp">FormData</span><br>): <span class="tp">Promise</span>&lt;<span class="tp">State</span>&gt; {</div>
+          <div class="sc-foot"><span class="sc-tag">nextjs</span><span class="sc-tag">server-actions</span><div class="sc-meta"><span class="sc-pub">⎘ 1,432</span></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="comm-filter-bar">
+      <span class="comm-filter-label">Language:</span>
+      <div class="comm-chips">
+        <span class="comm-chip act">All</span>
+        <span class="comm-chip">TypeScript</span>
+        <span class="comm-chip">Python</span>
+        <span class="comm-chip">Go</span>
+        <span class="comm-chip">Rust</span>
+        <span class="comm-chip">SQL</span>
+        <span class="comm-chip">Bash</span>
+      </div>
+      <div class="comm-sort">Sort by: <select><option>Most copied</option><option>Newest</option><option>Trending</option></select></div>
+    </div>
+    <div class="comm-grid">
+      <div class="snip-card"><div class="sc-head"><div class="sc-icon" style="background:rgba(251,146,60,0.1)">△</div><div class="sc-info"><div class="sc-title">Rust error propagation</div><div class="sc-desc">The ? operator with custom error types</div></div></div><div class="sc-code"><span class="kw">fn</span> <span class="fn">read_config</span>(path: &amp;<span class="tp">str</span>) -&gt; <span class="tp">Result</span>&lt;<span class="tp">Config</span>, <span class="tp">AppError</span>&gt; {<br>&nbsp;&nbsp;<span class="kw">let</span> content = fs::<span class="fn">read_to_string</span>(path)?;<br>&nbsp;&nbsp;<span class="kw">let</span> config: <span class="tp">Config</span> = serde_json::<span class="fn">from_str</span>(&amp;content)?;<br>&nbsp;&nbsp;<span class="tp">Ok</span>(config)<br>}</div><div class="sc-foot"><span class="sc-tag">error-handling</span><span class="sc-tag">rust</span><div class="sc-meta"><span class="sc-pub">⎘ 934</span></div></div></div>
+      <div class="snip-card"><div class="sc-head"><div class="sc-icon" style="background:rgba(74,222,128,0.1)">◈</div><div class="sc-info"><div class="sc-title">PostgreSQL recursive CTE</div><div class="sc-desc">Tree structure query with parent-child hierarchy</div></div></div><div class="sc-code"><span class="kw">WITH RECURSIVE</span> tree <span class="kw">AS</span> (<br>&nbsp;&nbsp;<span class="kw">SELECT</span> id, parent_id, name, <span class="num">0</span> <span class="kw">AS</span> depth<br>&nbsp;&nbsp;<span class="kw">FROM</span> categories <span class="kw">WHERE</span> parent_id <span class="kw">IS NULL</span><br>&nbsp;&nbsp;<span class="kw">UNION ALL</span> ...</div><div class="sc-foot"><span class="sc-tag">sql</span><span class="sc-tag">postgresql</span><div class="sc-meta"><span class="sc-pub">⎘ 687</span></div></div></div>
+      <div class="snip-card"><div class="sc-head"><div class="sc-icon" style="background:rgba(34,211,238,0.1)">⊞</div><div class="sc-info"><div class="sc-title">Go graceful shutdown</div><div class="sc-desc">HTTP server shutdown with signal handling</div></div></div><div class="sc-code"><span class="kw">quit</span> := <span class="fn">make</span>(<span class="kw">chan</span> <span class="tp">os.Signal</span>, <span class="num">1</span>)<br>signal.<span class="fn">Notify</span>(quit, syscall.SIGINT)<br>&lt;-quit<br>ctx, cancel := context.<span class="fn">WithTimeout</span>(...</div><div class="sc-foot"><span class="sc-tag">go</span><span class="sc-tag">http</span><span class="sc-tag">server</span><div class="sc-meta"><span class="sc-pub">⎘ 512</span></div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== SCREEN: SETTINGS ====== -->
+<div class="screen-wrap" id="s-settings">
+  <div class="profile-wrap">
+    <div class="profile-cover">
+      <button class="profile-cover-edit">Edit cover</button>
+    </div>
+    <div class="profile-top">
+      <div class="profile-avatar-wrap">
+        <div class="profile-avatar">N</div>
+        <div class="profile-avatar-edit">✎</div>
+      </div>
+      <div class="profile-info">
+        <div class="profile-name">Nihal Sheikh</div>
+        <div class="profile-handle">@nihalsheikh · nihalsheikh.dev</div>
+        <div class="profile-bio">Computer Engineer · Building SnippetVault & EigenVault · Open to work 🟢</div>
+      </div>
+      <div class="profile-actions">
+        <button class="btn-ghost" style="font-size:12px;padding:7px 16px">Share profile ↗</button>
+      </div>
+    </div>
+
+    <div class="profile-stats">
+      <div class="ps-card"><div class="ps-num">48</div><div class="ps-label">Snippets</div></div>
+      <div class="ps-card"><div class="ps-num" style="font-size:22px;color:var(--t1)">1,284</div><div class="ps-label">Total copies</div></div>
+      <div class="ps-card"><div class="ps-num" style="color:var(--purple)">23</div><div class="ps-label">AI explains</div></div>
+      <div class="ps-card"><div class="ps-num" style="font-size:22px;color:var(--t1)">312</div><div class="ps-label">Best snippet copies</div></div>
+    </div>
+
+    <div class="settings-nav">
+      <button class="settings-nav-btn act">Profile</button>
+      <button class="settings-nav-btn">Account</button>
+      <button class="settings-nav-btn">Appearance</button>
+      <button class="settings-nav-btn">API Keys</button>
+      <button class="settings-nav-btn">Notifications</button>
+      <button class="settings-nav-btn" style="color:var(--red)">Danger Zone</button>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">Public profile</div>
+      <div class="settings-section-desc">This information is visible to anyone who visits your profile.</div>
+      <div class="settings-row">
+        <div class="settings-field"><label class="settings-label">Display name</label><input class="settings-input" value="Nihal Sheikh"/></div>
+        <div class="settings-field"><label class="settings-label">Username</label><input class="settings-input" value="nihalsheikh"/></div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-field"><label class="settings-label">Website</label><input class="settings-input" value="nihalsheikh.dev"/></div>
+        <div class="settings-field"><label class="settings-label">GitHub</label><input class="settings-input" value="@nihalsheikh"/></div>
+      </div>
+      <div class="settings-field" style="margin-bottom:14px">
+        <label class="settings-label">Bio</label>
+        <textarea class="settings-input" style="height:80px;resize:none;line-height:1.6">Computer Engineer · Building SnippetVault & EigenVault · Open to work 🟢</textarea>
+      </div>
+    </div>
+
+    <div class="settings-section" style="border-top:1px solid var(--b1);padding-top:24px">
+      <div class="settings-section-title">Preferences</div>
+      <div class="settings-section-desc">Control how SnippetVault works for you.</div>
+      <div class="settings-toggle-row"><div class="settings-toggle-info"><div class="settings-toggle-title">Default snippet visibility</div><div class="settings-toggle-desc">New snippets are public by default</div></div><div class="toggle on"></div></div>
+      <div class="settings-toggle-row"><div class="settings-toggle-info"><div class="settings-toggle-title">AI auto-tagging</div><div class="settings-toggle-desc">Automatically suggest tags when you paste code</div></div><div class="toggle on"></div></div>
+      <div class="settings-toggle-row"><div class="settings-toggle-info"><div class="settings-toggle-title">AI auto-explanation</div><div class="settings-toggle-desc">Generate explanation when saving a new snippet</div></div><div class="toggle"></div></div>
+      <div class="settings-toggle-row"><div class="settings-toggle-info"><div class="settings-toggle-title">Copy notifications</div><div class="settings-toggle-desc">Email me when someone copies my public snippet</div></div><div class="toggle"></div></div>
+    </div>
+
+    <div style="padding:20px 0 28px;display:flex;justify-content:flex-end">
+      <button class="settings-save">Save changes →</button>
+    </div>
+
+    <div class="danger-zone">
+      <div class="dz-title">Danger Zone</div>
+      <div class="dz-desc">These actions are irreversible. Make sure you know what you're doing before proceeding.</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn-danger">Export all snippets</button>
+        <button class="btn-danger">Delete all snippets</button>
+        <button class="btn-danger" style="border-color:rgba(248,113,113,0.5);background:rgba(248,113,113,0.05)">Delete account permanently</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function show(id, btn) {
+  document.querySelectorAll('.screen-wrap').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.screen-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('s-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+function authToggle(mode) {
+  const isLogin = mode === 'login';
+  document.getElementById('auth-form-login').style.display = isLogin ? 'block' : 'none';
+  document.getElementById('auth-form-signup').style.display = isLogin ? 'none' : 'block';
+  document.getElementById('tab-login').classList.toggle('act', isLogin);
+  document.getElementById('tab-signup').classList.toggle('act', !isLogin);
+  document.getElementById('auth-switch-text').innerHTML = isLogin
+    ? 'Don\'t have an account? <a href="#" onclick="authToggle(\'signup\');return false">Create one →</a>'
+    : 'Already have an account? <a href="#" onclick="authToggle(\'login\');return false">Sign in →</a>';
+}
+document.querySelectorAll('.dash-filter-chip').forEach(c => {
+  c.onclick = () => { document.querySelectorAll('.dash-filter-chip').forEach(x => x.classList.remove('act')); c.classList.add('act'); };
+});
+document.querySelectorAll('.comm-chip').forEach(c => {
+  c.onclick = () => { document.querySelectorAll('.comm-chip').forEach(x => x.classList.remove('act')); c.classList.add('act'); };
+});
+document.querySelectorAll('.settings-nav-btn').forEach(b => {
+  b.onclick = () => { document.querySelectorAll('.settings-nav-btn').forEach(x => x.classList.remove('act')); b.classList.add('act'); };
+});
+document.querySelectorAll('.cp-lang-opt').forEach(o => {
+  o.onclick = () => { document.querySelectorAll('.cp-lang-opt').forEach(x => x.classList.remove('act')); o.classList.add('act'); };
+});
+document.querySelectorAll('.vis-opt').forEach(o => {
+  o.onclick = () => { document.querySelectorAll('.vis-opt').forEach(x => x.classList.remove('act')); o.classList.add('act'); };
+});
+document.querySelectorAll('.toggle').forEach(t => {
+  t.onclick = () => t.classList.toggle('on');
+});
+
+function toggleTheme() {
+  const isLight = document.documentElement.classList.toggle('light');
+  document.getElementById('themeIcon').textContent = isLight ? '☾' : '☀';
+  document.getElementById('themeLabel').textContent = isLight ? 'Dark' : 'Light';
+  localStorage.setItem('sv-theme', isLight ? 'light' : 'dark');
+}
+// Restore saved theme
+if (localStorage.getItem('sv-theme') === 'light') {
+  document.documentElement.classList.add('light');
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('themeIcon').textContent = '☾';
+    document.getElementById('themeLabel').textContent = 'Dark';
+  });
+}
+</script>
+</body>
+</html>

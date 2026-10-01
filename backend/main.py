@@ -1,13 +1,39 @@
-from fastapi import FastAPI, status
+from fastapi import FastAPI, HTTPException
+from fastapi.exceptions import RequestValidationError
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 
 from database.db import Base, engine
-from models import User, Snippet, OAuthAccount
+from models import User, Snippet, OAuthAccount, RefreshToken
+from middleware.exception_handler import (
+    global_exception_handler,
+    http_exception_handler,
+    validation_exception_handler,
+)
+
+from routes.health_route import router as health_router
+from routes.users_route import router as user_router
 
 Base.metadata.create_all(bind=engine)
+
+BASE_DIR = Path(__file__).resolve().parent
 
 app = FastAPI(title="SnippetVault API")
 
 
-@app.get("/api/health", status_code=status.HTTP_200_OK, tags=["Health"])
-def health():
-    return {"message": "API is healthy", "status": "OK"}
+# Email Template Icons
+app.mount(
+    "/emails/icons",
+    StaticFiles(directory=BASE_DIR / "emails" / "templates" / "icons"),
+)
+
+
+# Error Handlers Middlewares
+app.add_exception_handler(Exception, global_exception_handler)
+app.add_exception_handler(HTTPException, http_exception_handler)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
+
+
+# Routes
+app.include_router(health_router)
+app.include_router(user_router)

@@ -26,8 +26,8 @@ class User(Base):
     profile_image = Column(String)
 
     username = Column(String, unique=True, index=True, nullable=True)
-    bio = Column(Text)
-    website = Column(String)
+    bio = Column(Text, nullable=True)
+    website = Column(String, nullable=True)
 
     created_at = Column(
         DateTime(timezone=True),
@@ -44,6 +44,15 @@ class User(Base):
     oauth_accounts = relationship(
         "OAuthAccount", back_populates="user", cascade="all, delete-orphan"
     )
+
     snippets = relationship(
         "Snippet", back_populates="author", cascade="all, delete-orphan"
+    )
+
+    refresh_tokens = relationship(
+        "RefreshToken", back_populates="user", cascade="all, delete-orphan"
+    )
+
+    email_verification_tokens = relationship(
+        "EmailVerificationToken", back_populates="user", cascade="all, delete-orphan"
     )
