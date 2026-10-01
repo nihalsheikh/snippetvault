@@ -17,6 +17,7 @@ from routes.health_route import router as health_router
 from routes.users_route import router as user_router
 from routes.snippets_route import router as snippet_router
 from routes.collections_route import router as collections_router
+from routes.community_route import router as community_router
 
 Base.metadata.create_all(bind=engine)
 
@@ -52,5 +53,6 @@ app.add_exception_handler(RequestValidationError, validation_exception_handler)
 # Routes
 app.include_router(snippet_router)
 app.include_router(collections_router)
+app.include_router(community_router)
 app.include_router(user_router)
 app.include_router(health_router)
