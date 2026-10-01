@@ -3,6 +3,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
+import logging
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
@@ -21,10 +22,20 @@ from routes.users_route import router as user_router
 from routes.snippets_route import router as snippet_router
 from routes.collections_route import router as collections_router
 from routes.community_route import router as community_router
+from routes.ai_route import router as ai_router
+from routes.comments_route import router as comments_router
 
 Base.metadata.create_all(bind=engine)
 
 BASE_DIR = Path(__file__).resolve().parent
+
+# Nothing in the app configures logging, so email failures would otherwise only
+# reach stderr via the last-resort handler. One config here makes every
+# `logger.info`/`logger.error` in the codebase actually visible in the terminal.
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)-8s %(name)s: %(message)s",
+)
 
 
 app = FastAPI(title="SnippetVault API")
@@ -66,3 +77,5 @@ app.include_router(collections_router)
 app.include_router(community_router)
 app.include_router(user_router)
 app.include_router(health_router)
+app.include_router(ai_router)
+app.include_router(comments_router)

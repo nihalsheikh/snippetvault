@@ -9,6 +9,7 @@ from schemas.collection_req_res import (
     CreateCollectionResponse,
     AllCollectionsResponse,
     CollectionResponse,
+    CollectionSnippetsResponse,
     UpdateCollectionRequest,
     DeleteCollectionResponse,
     AddSnippetToCollectionRequest,
@@ -16,7 +17,7 @@ from schemas.collection_req_res import (
 from utils.get_db import get_db
 from auth.token import get_current_user_id
 
-router = APIRouter(tags=["Collections"])
+router = APIRouter(prefix="/api", tags=["Collections"])
 
 
 # Create a Snippet Collection
@@ -67,6 +68,8 @@ def get_user_collections(
 ):
     offset = (page - 1) * limit
 
+    total = db.query(Collection).filter(Collection.user_id == user_id).count()
+
     collections = (
         db.query(Collection)
         .filter(Collection.user_id == user_id)
@@ -79,6 +82,10 @@ def get_user_collections(
     return {
         "message": "Fetched all user collections",
         "collections": collections,
+        "page": page,
+        "limit": limit,
+        "total": total,
+        "has_next": offset + len(collections) < total,
     }
 
 
@@ -114,6 +121,64 @@ def get_user_collection(
     return {
         "message": "Fetched collection details",
         "collection": collection,
+    }
+
+
+# Get the snippets inside a collection
+@router.get(
+    "/collections/{collection_id}/snippets",
+    status_code=status.HTTP_200_OK,
+    response_model=CollectionSnippetsResponse,
+    summary="Get a collection's snippets",
+    description="Retrieve the snippets saved in a collection owned by the authenticated user.",
+)
+def get_collection_snippets(
+    request: Request,
+    collection_id: UUID,
+    page: int = 1,
+    limit: int = 10,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    offset = (page - 1) * limit
+
+    collection = (
+        db.query(Collection)
+        .filter(
+            Collection.id == collection_id,
+            Collection.user_id == user_id,
+        )
+        .first()
+    )
+
+    if not collection:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Collection not found",
+        )
+
+    query = (
+        db.query(Snippet)
+        .join(
+            CollectionSnippet,
+            CollectionSnippet.snippet_id == Snippet.id,
+        )
+        .filter(CollectionSnippet.collection_id == collection_id)
+    )
+
+    total = query.count()
+
+    snippets = (
+        query.order_by(Snippet.created_at.desc()).offset(offset).limit(limit).all()
+    )
+
+    return {
+        "message": "Fetched collection snippets",
+        "snippets": snippets,
+        "page": page,
+        "limit": limit,
+        "total": total,
+        "has_next": offset + len(snippets) < total,
     }
 
 

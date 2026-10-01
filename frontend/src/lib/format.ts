@@ -4,7 +4,7 @@ export function formatNumber(n: number): string {
 }
 
 /** "2d ago" from an ISO date, matching the design's relative timestamps. */
-export function relativeTime(iso: string, now = new Date('2025-03-16T12:00:00Z')): string {
+export function relativeTime(iso: string, now = new Date()): string {
   const then = new Date(iso).getTime()
   const seconds = Math.round((now.getTime() - then) / 1000)
 
@@ -36,6 +36,15 @@ export function initialsOf(name: string): string {
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase() ?? '')
     .join('')
+}
+
+/**
+ * The handle to show for an account. Falls back to the part of the email before the
+ * `@` when no handle was claimed, which is also what the backend now writes at signup
+ * — this covers rows created before that, where the column is still null.
+ */
+export function usernameOf(p: { username: string | null; email: string }): string {
+  return p.username?.trim() || p.email.split('@')[0] || p.email
 }
 
 /** Deterministic gradient so an author always gets the same avatar colour. */

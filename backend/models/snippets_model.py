@@ -53,3 +53,9 @@ class Snippet(Base):
         secondary="snippet_tags",
         back_populates="snippets",
     )
+
+    comments = relationship(
+        "Comment",
+        back_populates="snippet",
+        cascade="all, delete-orphan",
+    )

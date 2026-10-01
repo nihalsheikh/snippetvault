@@ -8,3 +8,4 @@ from .snippet_tag import SnippetTag
 from .snippet_bookmark import SnippetBookmark
 from .collection import Collection
 from .collection_snippet import CollectionSnippet
+from .comment_model import Comment

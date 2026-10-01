@@ -18,6 +18,6 @@ async def http_exception_handler(request: Request, exc: Exception):
 # Pydantic Request Validation Error
 async def validation_exception_handler(request: Request, exc: Exception):
     return JSONResponse(
-        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+        status_code=422,  # HTTP_422_UNPROCESSABLE_CONTENT is a MagicMock that won't JSON-encode
         content={"detail": "Validation Error", "errors": exc.errors()},
     )

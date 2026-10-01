@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { AlertCircle, CheckCircle2, Loader2, MailWarning } from 'lucide-react'
+import { AlertCircle, CheckCircle2, Loader2, MailWarning, Send } from 'lucide-react'
 
-import { ButtonLink } from '@/components/ui/Button'
+import { Button, ButtonLink } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
+import { authApi } from '@/lib/api'
 
 type Status = 'verifying' | 'success' | 'error'
+type ResendStatus = 'idle' | 'sending' | 'sent'
 
 /** Backend error `detail` → what we show the user. */
 const ERROR_COPY: Record<string, string> = {
@@ -39,26 +42,15 @@ export function VerifyEmailPage() {
     setMessage('Checking your link…')
 
     try {
-      const res = await fetch('/api/auth/email/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token }),
-      })
-
-      if (res.ok) {
-        setStatus('success')
-        setMessage('Your email address is verified.')
-        return
-      }
-
-      const detail = await res.json().catch(() => null)
-      const raw = typeof detail?.detail === 'string' ? detail.detail : ''
-
+      await authApi.verifyEmail(token)
+      setStatus('success')
+      setMessage('Your email address is verified.')
+    } catch (err) {
       setStatus('error')
-      setMessage(ERROR_COPY[raw] ?? 'Something went wrong while verifying your email.')
-    } catch {
-      setStatus('error')
-      setMessage('Could not reach the server. Check your connection and try again.')
+      setMessage(
+        ERROR_COPY[err instanceof Error ? err.message : ''] ??
+          'Something went wrong while verifying your email.',
+      )
     }
   }, [token])
 
@@ -115,11 +107,14 @@ export function VerifyEmailPage() {
 
         {status === 'error' ? (
           <>
-            <ButtonLink to="/auth?mode=signup" size="lg">
-              Back to sign up
-            </ButtonLink>
-            <ButtonLink to="/auth?mode=login" variant="ghost" size="lg">
+            {/* Signing in is impossible until the address is verified, so this is
+                the only useful way forward — the account exists but is locked out
+                of every authenticated route. */}
+            <ButtonLink to="/auth?mode=login" size="lg">
               I already verified
+            </ButtonLink>
+            <ButtonLink to="/auth?mode=signup" variant="ghost" size="lg">
+              Sign up again
             </ButtonLink>
           </>
         ) : null}
@@ -131,11 +126,70 @@ export function VerifyEmailPage() {
         ) : null}
       </div>
 
-      {status === 'error' ? (
-        <p className="mt-8 max-w-[420px] font-mono text-[11px] leading-[1.7] text-t4">
-          Lost the original email? Sign up again with the same address and we will send a new link.
-        </p>
-      ) : null}
+      {status === 'error' ? <ResendForm /> : null}
     </div>
+  )
+}
+
+/**
+ * Reissues the signup link. The endpoint answers identically whether or not the
+ * address has an unverified account, so this is deliberately not branched on the
+ * result — reporting it would turn the form into an account-enumeration oracle.
+ */
+function ResendForm() {
+  const [email, setEmail] = useState('')
+  const [resend, setResend] = useState<ResendStatus>('idle')
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!email.trim()) return
+    setResend('sending')
+    try {
+      await authApi.resendVerification(email.trim())
+    } catch {
+      // Same reasoning as above — a network failure is the only case worth
+      // mentioning, and it leaks nothing about whether the account exists.
+    }
+    setResend('sent')
+  }
+
+  if (resend === 'sent') {
+    return (
+      <p className="mt-8 max-w-[420px] font-mono text-[11px] leading-[1.7] text-t4">
+        If an unverified account exists for that address, a fresh link is on its way. New links
+        are good for 10 minutes and work only once.
+      </p>
+    )
+  }
+
+  return (
+    <form onSubmit={onSubmit} className="mt-10 w-full max-w-[380px]">
+      <p className="mb-3 text-[13px] leading-[1.7] text-t2">
+        Lost the link? Send yourself a new one.
+      </p>
+      <div className="flex items-start gap-2">
+        <Input
+          label="Email address"
+          type="email"
+          placeholder="you@example.com"
+          autoComplete="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="mb-0 flex-1"
+        />
+        <Button type="submit" disabled={resend === 'sending'} className="shrink-0">
+          {resend === 'sending' ? (
+            <span className="flex items-center justify-center gap-2">
+              <Loader2 size={14} className="animate-spin" /> Sending…
+            </span>
+          ) : (
+            <span className="flex items-center justify-center gap-2">
+              <Send size={13} /> Resend
+            </span>
+          )}
+        </Button>
+      </div>
+    </form>
   )
 }

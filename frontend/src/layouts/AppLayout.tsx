@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, Outlet } from 'react-router-dom'
-import { Bell, Search } from 'lucide-react'
+import { Search } from 'lucide-react'
 
 import { AppTopBar } from '@/components/ui/Navigation'
 import { Avatar } from '@/components/ui/Avatar'
@@ -8,39 +8,39 @@ import { CommandPalette } from '@/components/layout/CommandPalette'
 import { DashboardSidebar } from '@/components/layout/DashboardSidebar'
 import { Button } from '@/components/ui/Button'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
-import { currentUser } from '@/lib/data'
-import { cx } from '@/lib/format'
+import { useAuth } from '@/hooks/useAuth'
+import { avatarGradient, cx, initialsOf } from '@/lib/format'
+import type { Author } from '@/lib/types'
 
 interface AppLayoutProps {
   links: { to: string; label: string }[]
-  active: string
-  /** Hide the top bar (the create screen draws its own editor tabs). */
-  appBar?: boolean
-  /** Hide the sidebar (community and detail are full-width). */
+  /**
+   * The sidebar is the signed-in user's own library, so it is shown only to someone
+   * who has one. A reading page (snippet detail, member profile) passes `false` to
+   * drop the 240px rail even when signed in.
+   */
   sidebar?: boolean
   /** Drop the max-width constraint used by the dashboard. */
   wide?: boolean
 }
 
-export function AppLayout({
-  links,
-  active,
-  appBar = true,
-  sidebar = true,
-  wide = true,
-}: AppLayoutProps) {
+export function AppLayout({ links, sidebar = true, wide = true }: AppLayoutProps) {
   const [paletteOpen, setPaletteOpen] = useState(false)
+  const { status } = useAuth()
+
+  // Gated on `authed` rather than `!anon` so the rail doesn't flash during the
+  // window where the stored token is still being hydrated — that flash would show
+  // the previous user's library.
+  const showSidebar = sidebar && status === 'authed'
 
   return (
     <div className="min-h-screen bg-bg">
-      {appBar ? (
-        <AppTopBar links={links} active={active} right={<TopBarRight onSearch={() => setPaletteOpen(true)} />} />
-      ) : null}
+      <AppTopBar links={links} right={<TopBarRight onSearch={() => setPaletteOpen(true)} />} />
 
-      <div className={cx('grid', sidebar ? 'grid-cols-[240px_1fr] max-lg:grid-cols-1' : 'grid-cols-1')}>
-        {sidebar ? <DashboardSidebar /> : null}
+      <div className={cx('grid', showSidebar ? 'grid-cols-[240px_1fr] max-lg:grid-cols-1' : 'grid-cols-1')}>
+        {showSidebar ? <DashboardSidebar /> : null}
 
-        <main className={cx('bg-bg', sidebar ? 'p-7 max-lg:p-4' : wide ? '' : 'p-7')}>
+        <main className={cx('bg-bg', showSidebar ? 'p-7 max-lg:p-4' : wide ? '' : 'p-7')}>
           <Outlet />
         </main>
       </div>
@@ -51,6 +51,21 @@ export function AppLayout({
 }
 
 function TopBarRight({ onSearch }: { onSearch: () => void }) {
+  const { profile } = useAuth()
+
+  // Community and the public snippet detail are reachable signed out, where there
+  // is no profile at all — the avatar then points at the login page instead.
+  const user: Author = profile
+    ? {
+        id: profile.id,
+        name: profile.name,
+        username: profile.username,
+        initials: initialsOf(profile.name) || initialsOf(profile.username) || '?',
+        avatarGradient: avatarGradient(profile.id),
+        profileImage: profile.profileImage,
+      }
+    : { id: '', name: 'Sign in', username: '', initials: '', avatarGradient: avatarGradient('') }
+
   return (
     <>
       <button
@@ -63,14 +78,8 @@ function TopBarRight({ onSearch }: { onSearch: () => void }) {
         <kbd className="rounded-[3px] border border-b2 bg-b1 px-[5px] py-px text-[10px]">⌘K</kbd>
       </button>
 
-      <button
-        type="button"
-        aria-label="Notifications"
-        className="relative flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[var(--radius-r1)] border border-b1 text-t2 transition-all hover:border-b2 hover:text-t1"
-      >
-        <Bell size={16} />
-        <span className="absolute right-[7px] top-[7px] h-[7px] w-[7px] rounded-full border-2 border-s1 bg-red" />
-      </button>
+      {/* No notifications backend, so no bell. A hardcoded unread dot would claim
+          activity that can never arrive. See ProfilePage's Notifications tab. */}
 
       <ThemeToggle />
 
@@ -80,8 +89,8 @@ function TopBarRight({ onSearch }: { onSearch: () => void }) {
 
       <span className="h-5 w-px bg-b2" />
 
-      <Link to="/profile" title={`@${currentUser.username}`}>
-        <Avatar author={currentUser} size="md" className="border-2 border-transparent transition-colors hover:border-lime" />
+      <Link to={profile ? '/profile' : '/auth'} title={profile ? `@${user.username}` : 'Sign in'}>
+        <Avatar author={user} size="md" className="border-2 border-transparent transition-colors hover:border-lime" />
       </Link>
     </>
   )

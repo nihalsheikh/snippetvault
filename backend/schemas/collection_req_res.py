@@ -2,6 +2,8 @@ from pydantic import BaseModel, Field, ConfigDict
 from uuid import UUID
 from datetime import datetime
 
+from schemas.snippet_req_res import SnippetDetails
+
 
 # Collection details
 class CollectionDetails(BaseModel):
@@ -31,6 +33,10 @@ class CreateCollectionResponse(BaseModel):
 class AllCollectionsResponse(BaseModel):
     message: str
     collections: list[CollectionDetails]
+    page: int
+    limit: int
+    total: int
+    has_next: bool
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -57,3 +63,15 @@ class DeleteCollectionResponse(BaseModel):
 # Add a snippet to collection req
 class AddSnippetToCollectionRequest(BaseModel):
     snippet_id: UUID
+
+
+# Snippets inside a collection
+class CollectionSnippetsResponse(BaseModel):
+    message: str
+    snippets: list[SnippetDetails]
+    page: int
+    limit: int
+    total: int
+    has_next: bool
+
+    model_config = ConfigDict(from_attributes=True)

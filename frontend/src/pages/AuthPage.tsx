@@ -1,10 +1,12 @@
 import { useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 
 import { Input } from '@/components/ui/Input'
 import { CodePreview } from '@/components/ui/CodeBlock'
 import { LanguageBadge } from '@/components/ui/LanguageBadge'
 import { Tag } from '@/components/ui/Chip'
+import { useAuth } from '@/hooks/useAuth'
+import { messageOf } from '@/lib/api'
 import { cx, formatNumber } from '@/lib/format'
 
 type Mode = 'login' | 'signup'
@@ -43,18 +45,50 @@ export function AuthPage() {
   const initial = params.get('mode') === 'signup' ? 'signup' : 'login'
   const [mode, setMode] = useState<Mode>(initial)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
+
+  const { login, signup } = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
 
   function switchMode(next: Mode) {
     setMode(next)
     setParams({ mode: next }, { replace: true })
+    setError(null)
+    setNotice(null)
   }
 
-  function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    // The backend auth endpoints are still being built — the UI is complete,
-    // so this is where the fetch to /api/auth/* will land.
+    const data = new FormData(e.currentTarget)
     setLoading(true)
-    window.setTimeout(() => setLoading(false), 600)
+    setError(null)
+    setNotice(null)
+
+    try {
+      if (mode === 'login') {
+        await login(String(data.get('email') ?? ''), String(data.get('password') ?? ''))
+        // `state.from` is set both by `RequireAuth` on the page that bounced them here
+        // and by `RequireAnon`, which parks a signed-in visitor here before sending
+        // them on. Same key, so one lookup covers both.
+        const from = (location.state as { from?: string } | null)?.from
+        navigate(from ?? '/dashboard', { replace: true })
+      } else {
+        // Signup returns no tokens — the account can't be used until the emailed
+        // link is opened, so this is a "check your inbox" state, not a redirect.
+        const message = await signup({
+          name: String(data.get('name') ?? ''),
+          email: String(data.get('email') ?? ''),
+          password: String(data.get('password') ?? ''),
+        })
+        setNotice(`${message} Check your inbox for the verification link.`)
+      }
+    } catch (err) {
+      setError(messageOf(err))
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -106,20 +140,23 @@ export function AuthPage() {
 
         <form onSubmit={onSubmit}>
           {mode === 'signup' ? (
-            <>
-              <Input label="Full name" type="text" placeholder="Nihal Sheikh" autoComplete="name" />
-              <Input
-                label="Username"
-                type="text"
-                placeholder="nihalsheikh"
-                autoComplete="username"
-                hint="snippetvault.dev/@nihalsheikh"
-              />
-            </>
+            /* No username field: the backend's signup request has no `username`
+               key, so anything typed here would be silently dropped. The handle is
+               claimed later from the profile page. */
+            <Input
+              label="Full name"
+              name="name"
+              type="text"
+              placeholder="John Doe"
+              autoComplete="name"
+              required
+              maxLength={50}
+            />
           ) : null}
 
           <Input
             label="Email address"
+            name="email"
             type="email"
             placeholder="you@example.com"
             autoComplete="email"
@@ -128,20 +165,40 @@ export function AuthPage() {
 
           <Input
             label="Password"
+            name="password"
             type="password"
-            placeholder={mode === 'signup' ? 'min. 8 characters' : '••••••••••'}
+            placeholder={mode === 'signup' ? 'min. 6 characters' : '••••••••••'}
             autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
             required
+            minLength={mode === 'signup' ? 6 : undefined}
             hint={
               mode === 'signup' ? (
-                'Must contain uppercase, number, and special character'
+                'At least 6 characters'
               ) : (
-                <Link to="/auth" className="ml-auto block text-[11px] text-lime no-underline">
+                <Link to="/forgot-password" className="ml-auto block text-[11px] text-lime no-underline">
                   Forgot password?
                 </Link>
               )
             }
           />
+
+          {/* Server-side errors land here verbatim — the backend's messages
+              ("Invalid email or password", "Please verify your email first") are
+              already written for humans, so nothing is reworded. */}
+          {error ? (
+            <p
+              role="alert"
+              className="mb-4 rounded-[var(--radius-r1)] border border-[color-mix(in_srgb,var(--red)_30%,transparent)] bg-[color-mix(in_srgb,var(--red)_8%,transparent)] px-3 py-2.5 text-[13px] text-red"
+            >
+              {error}
+            </p>
+          ) : null}
+
+          {notice ? (
+            <p role="status" className="mb-4 rounded-[var(--radius-r1)] border border-[color-mix(in_srgb,var(--lime)_35%,transparent)] bg-[color-mix(in_srgb,var(--lime)_10%,transparent)] px-3 py-2.5 text-[13px] text-t2">
+              {notice}
+            </p>
+          ) : null}
 
           <button
             type="submit"
@@ -156,16 +213,22 @@ export function AuthPage() {
           or continue with
         </div>
 
+        {/* No OAuth routes exist yet — `OAuthAccount` is a model with nothing
+            pointing at it. These stay disabled rather than dead-clickable. */}
         <button
           type="button"
-          className="mb-2.5 flex w-full cursor-pointer items-center justify-center gap-2.5 rounded-[var(--radius-r1)] border border-b1 bg-s2 px-3.5 py-2.5 text-[13px] text-t1 transition-colors duration-200 hover:bg-s3"
+          disabled
+          title="Social login isn't available yet"
+          className="mb-2.5 flex w-full cursor-not-allowed items-center justify-center gap-2.5 rounded-[var(--radius-r1)] border border-b1 bg-s2 px-3.5 py-2.5 text-[13px] text-t4 opacity-60"
         >
           <GithubIcon />
           Continue with GitHub
         </button>
         <button
           type="button"
-          className="flex w-full cursor-pointer items-center justify-center gap-2.5 rounded-[var(--radius-r1)] border border-b1 bg-s2 px-3.5 py-2.5 text-[13px] text-t1 transition-colors duration-200 hover:bg-s3"
+          disabled
+          title="Social login isn't available yet"
+          className="flex w-full cursor-not-allowed items-center justify-center gap-2.5 rounded-[var(--radius-r1)] border border-b1 bg-s2 px-3.5 py-2.5 text-[13px] text-t4 opacity-60"
         >
           <GoogleIcon />
           Continue with Google

@@ -1,25 +1,20 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ArrowUp, LayoutGrid, Plus, Search } from 'lucide-react'
+import { LayoutGrid, Plus, Search } from 'lucide-react'
 
 import { SnippetCard } from '@/components/ui/SnippetCard'
 import { FilterChip } from '@/components/ui/Chip'
 import { ButtonLink } from '@/components/ui/Button'
-import { dashboardStats, mySnippets } from '@/lib/data'
+import { useDebounce } from '@/hooks/useDebounce'
+import { messageOf, snippetsApi } from '@/lib/api'
+import { toSnippets } from '@/lib/mappers'
+import { languageMeta } from '@/lib/languages'
+import { setViewParam } from '@/lib/nav'
 import { cx, formatNumber } from '@/lib/format'
-import type { Language, Visibility } from '@/lib/types'
+import type { Snippet, Visibility } from '@/lib/types'
 
 type SortKey = 'recent' | 'copies' | 'az'
-type ViewKey = 'all' | Visibility
-
-const FILTERS: { label: string; lang?: Language }[] = [
-  { label: 'All' },
-  { label: 'TypeScript', lang: 'typescript' },
-  { label: 'Python', lang: 'python' },
-  { label: 'Rust', lang: 'rust' },
-  { label: 'Go', lang: 'go' },
-  { label: 'SQL', lang: 'sql' },
-]
+type ViewKey = 'all' | 'bookmarks' | Visibility
 
 const SORTS: { key: SortKey; label: string }[] = [
   { key: 'recent', label: 'Recently added' },
@@ -27,32 +22,78 @@ const SORTS: { key: SortKey; label: string }[] = [
   { key: 'az', label: 'A–Z' },
 ]
 
+/**
+ * The backend pages every list endpoint and caps `limit` at 100, so this covers a
+ * whole Free-plan library in one request rather than paginating the dashboard.
+ */
+const PAGE_SIZE = 100
+
+interface Loaded {
+  snippets: Snippet[]
+  /** From the list envelope — the true count, not just the page's length. */
+  total: number
+}
+
 export function DashboardPage() {
   const [params, setParams] = useSearchParams()
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState<SortKey>('recent')
 
-  const lang = (params.get('lang') as Language | null) ?? null
+  // Server-side search is `ILIKE` across title, description and code, so the
+  // keystroke is debounced rather than filtered in the browser.
+  const search = useDebounce(query, 350)
+
+  const [data, setData] = useState<Loaded | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  // Bumped by the retry button; not a real dependency of the fetch otherwise.
+  const [reload, setReload] = useState(0)
+
+  const lang = params.get('lang')
   const view = (params.get('view') as ViewKey | null) ?? 'all'
 
   function setParam(key: string, value: string | null) {
-    const next = new URLSearchParams(params)
-    if (value === null) next.delete(key)
-    else next.set(key, value)
-    setParams(next, { replace: true })
+    setParams(setViewParam(params, key, value), { replace: true })
   }
 
-  const results = useMemo(() => {
-    const q = query.trim().toLowerCase()
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    setError(null)
 
-    let list = mySnippets
-    if (view !== 'all') list = list.filter((s) => s.visibility === view)
-    if (lang) list = list.filter((s) => s.language === lang)
-    if (q) {
-      list = list.filter((s) =>
-        [s.title, s.description, s.language, ...s.tags].join(' ').toLowerCase().includes(q),
-      )
+    void (async () => {
+      try {
+        const result =
+          view === 'bookmarks'
+            ? await snippetsApi.bookmarks({ limit: PAGE_SIZE, search, language: lang ?? undefined })
+            : await snippetsApi.mine({ limit: PAGE_SIZE, search, language: lang ?? undefined })
+        if (cancelled) return
+
+        const mapped = toSnippets(result.items)
+        setData({ snippets: mapped, total: result.total })
+      } catch (err) {
+        if (!cancelled) {
+          setError(messageOf(err))
+          setData(null)
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    })()
+
+    return () => {
+      cancelled = true
     }
+  }, [search, lang, view, reload])
+
+  const results = useMemo(() => {
+    if (!data) return []
+    // Visibility has no server-side filter, and neither does A–Z. Both are applied
+    // to the page that was fetched.
+    let list =
+      view === 'public' || view === 'private'
+        ? data.snippets.filter((s) => s.visibility === view)
+        : data.snippets
 
     const sorted = [...list]
     if (sort === 'copies') sorted.sort((a, b) => b.copies - a.copies)
@@ -60,7 +101,32 @@ export function DashboardPage() {
     else sorted.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 
     return sorted
-  }, [query, view, lang, sort])
+  }, [data, sort, view])
+
+  /** The languages actually present in the loaded page, for the filter chips. */
+  const langs = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const snippet of data?.snippets ?? []) {
+      counts.set(snippet.language, (counts.get(snippet.language) ?? 0) + 1)
+    }
+    return [...counts.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .map(([id]) => id)
+  }, [data])
+
+  const stats = useMemo(() => {
+    const list = data?.snippets ?? []
+    return {
+      total: data?.total ?? 0,
+      copies: list.reduce((sum, s) => sum + s.copies, 0),
+      publicCount: list.filter((s) => s.visibility === 'public').length,
+      privateCount: list.filter((s) => s.visibility === 'private').length,
+      mostCopied: list.reduce<Snippet | null>(
+        (best, s) => (best === null || s.copies > best.copies ? s : best),
+        null,
+      ),
+    }
+  }, [data])
 
   return (
     <>
@@ -87,51 +153,51 @@ export function DashboardPage() {
         </div>
       </div>
 
-      {/* ---- stats ---- */}
-      <div className="mb-7 grid grid-cols-4 gap-3 max-xl:grid-cols-2 max-sm:grid-cols-1">
+      {/* ---- stats ----
+          There is no stats endpoint: totals come from the list envelope's `total`,
+          and the copy/AI figures from the fetched page. The design's "↑ N this week"
+          deltas had no data source at all — no endpoint records per-week activity —
+          so those lines are dropped rather than filled with a fabricated number. */}
+      <div className="mb-7 grid grid-cols-3 gap-3 max-xl:grid-cols-2 max-sm:grid-cols-1">
         <StatCard
           label="TOTAL SNIPPETS"
-          value={String(dashboardStats.totalSnippets)}
+          value={formatNumber(stats.total)}
           valueColor="var(--t1)"
-          change={`↑ ${dashboardStats.totalSnippetsDelta} this week`}
+          change={
+            data
+              ? `${stats.publicCount} public · ${stats.privateCount} private`
+              : ' '
+          }
         />
         <StatCard
           label="TOTAL COPIES"
-          value={formatNumber(dashboardStats.totalCopies)}
+          value={formatNumber(stats.copies)}
           valueColor="var(--lime)"
-          change={`↑ ${dashboardStats.totalCopiesDelta} this week`}
+          change="across your snippets"
         />
         <StatCard
           label="MOST COPIED"
-          value={dashboardStats.mostCopied}
+          value={stats.mostCopied?.title ?? '—'}
           valueColor="var(--cyan)"
           mono
-          change={`${dashboardStats.mostCopiedCount} copies all time`}
-          neutral
-        />
-        <StatCard
-          label="AI EXPLAINS USED"
-          value={String(dashboardStats.aiExplains)}
-          valueColor="var(--purple)"
-          change="this month"
-          neutral
+          change={
+            stats.mostCopied ? `${formatNumber(stats.mostCopied.copies)} copies all time` : ' '
+          }
         />
       </div>
 
       {/* ---- filters ---- */}
       <div className="mb-5 flex flex-wrap items-center gap-1.5">
-        {FILTERS.map((filter) => {
-          const active = filter.lang ? lang === filter.lang : !lang
-          return (
-            <FilterChip
-              key={filter.label}
-              active={active}
-              onClick={() => setParam('lang', filter.lang ?? null)}
-            >
-              {filter.label}
-            </FilterChip>
-          )
-        })}
+        <FilterChip active={!lang} onClick={() => setParam('lang', null)}>
+          All
+        </FilterChip>
+        {/* Built from the loaded page, so a snippet saved in a language the old
+            hardcoded list omitted (the create screen accepts any) is still filterable. */}
+        {langs.map((id) => (
+          <FilterChip key={id} active={lang === id} onClick={() => setParam('lang', id)}>
+            {languageMeta(id).label}
+          </FilterChip>
+        ))}
         <div className="ml-auto flex items-center gap-2 text-[12px] text-t3">
           Sort:
           <select
@@ -162,7 +228,23 @@ export function DashboardPage() {
       ) : null}
 
       {/* ---- grid ---- */}
-      {results.length === 0 ? (
+      {error ? (
+        <MessageState
+          title="Couldn't load your snippets"
+          body={error}
+          action={
+            <button
+              type="button"
+              onClick={() => setReload((n) => n + 1)}
+              className="text-[13px] font-semibold text-lime"
+            >
+              Try again →
+            </button>
+          }
+        />
+      ) : loading && !data ? (
+        <MessageState title="Loading your library…" body="Fetching your snippets." />
+      ) : results.length === 0 ? (
         <EmptyState />
       ) : (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-3.5">
@@ -190,36 +272,47 @@ function StatCard({
   valueColor,
   change,
   mono = false,
-  neutral = false,
 }: {
   label: string
   value: string
   valueColor: string
   change: string
   mono?: boolean
-  neutral?: boolean
 }) {
   return (
     <div className="rounded-[var(--radius-r2)] border border-b1 bg-s1 p-4">
       <div className="mb-1.5 font-mono text-[11px] tracking-[0.5px] text-t3">{label}</div>
       <div
         className={cx(
-          'text-[24px] font-bold leading-none',
+          'truncate text-[24px] font-bold leading-none',
           mono ? 'mt-1 text-[14px] font-normal' : 'font-serif',
         )}
         style={{ color: valueColor }}
+        title={value}
       >
         {value}
       </div>
-      <div
-        className={cx(
-          'mt-1 flex items-center gap-1 font-mono text-[11px]',
-          neutral ? 'text-t3' : 'text-green',
-        )}
-      >
-        {!neutral ? <ArrowUp size={11} /> : null}
-        {change}
-      </div>
+      <div className="mt-1 flex items-center gap-1 font-mono text-[11px] text-t3">{change}</div>
+    </div>
+  )
+}
+
+/** Shared loading / error shell. Reuses the empty state's dashed-border treatment. */
+function MessageState({
+  title,
+  body,
+  action,
+}: {
+  title: string
+  body: string
+  action?: ReactNode
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center rounded-[var(--radius-r2)] border border-dashed border-b2 py-16 text-center">
+      <LayoutGrid size={24} className="mb-3 text-t4" strokeWidth={1.5} />
+      <p className="mb-1 text-[14px] font-medium text-t2">{title}</p>
+      <p className="mb-5 max-w-[380px] text-[13px] text-t3">{body}</p>
+      {action}
     </div>
   )
 }

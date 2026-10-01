@@ -1,7 +1,9 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, useParams } from 'react-router-dom'
 
 import { SiteLayout } from '@/layouts/SiteLayout'
 import { AppLayout } from '@/layouts/AppLayout'
+import { RequireAnon } from '@/components/RequireAnon'
+import { RequireAuth } from '@/components/RequireAuth'
 
 import { LandingPage } from '@/pages/LandingPage'
 import { AuthPage } from '@/pages/AuthPage'
@@ -9,53 +11,82 @@ import { PricingPage } from '@/pages/PricingPage'
 import { DocsPage } from '@/pages/DocsPage'
 import { CommunityPage } from '@/pages/CommunityPage'
 import { DashboardPage } from '@/pages/DashboardPage'
+import { CollectionsPage } from '@/pages/CollectionsPage'
 import { SnippetDetailPage } from '@/pages/SnippetDetailPage'
 import { NewSnippetPage } from '@/pages/NewSnippetPage'
 import { ProfilePage } from '@/pages/ProfilePage'
+import { UserPage } from '@/pages/UserPage'
 import { VerifyEmailPage } from '@/pages/VerifyEmailPage'
+import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage'
+import { ResetPasswordPage } from '@/pages/ResetPasswordPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
+import { ErrorPage } from '@/pages/ErrorPage'
 
+// Explore and Community share a pathname and differ only by `sort`, so the top bar
+// matches on the query string too — see `isSameView` in lib/nav.ts.
 const APP_LINKS = [
   { to: '/dashboard', label: 'My Snippets' },
   { to: '/community', label: 'Community' },
-  { to: '/community', label: 'Explore' },
+  { to: '/community?sort=trending', label: 'Explore' },
 ]
+
+/** Reads the `:status` param and hands the numeric code to the shared page. */
+function ErrorPageRoute() {
+  const { status } = useParams()
+  const parsed = Number.parseInt(status ?? '', 10)
+  return <ErrorPage status={Number.isFinite(parsed) ? parsed : 500} />
+}
 
 export default function App() {
   return (
     <Routes>
-      {/* Public marketing pages */}
+      {/* Public marketing pages. A signed-in visitor has no use for the landing page
+          or the sign-in form, so `RequireAnon` sends them to their library instead. */}
+      <Route element={<RequireAnon />}>
+        <Route element={<SiteLayout />}>
+          <Route path="/" element={<LandingPage />} />
+        </Route>
+        {/* Auth is a full-screen split, so it sits outside the site shell */}
+        <Route path="/auth" element={<AuthPage />} />
+      </Route>
+
       <Route element={<SiteLayout />}>
-        <Route path="/" element={<LandingPage />} />
         <Route path="/pricing" element={<PricingPage />} />
         <Route path="/docs" element={<DocsPage />} />
-      </Route>
-
-      {/* Auth is a full-screen split, so it sits outside both shells */}
-      <Route path="/auth" element={<AuthPage />} />
-
-      {/* Arrives from the verification email, so it stands alone too */}
-      <Route element={<SiteLayout />}>
+        {/* Arrives from an email, so they stand alone too */}
         <Route path="/verify-email" element={<VerifyEmailPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
       </Route>
 
-      {/* Community needs the app top bar but no sidebar */}
-      <Route element={<AppLayout links={APP_LINKS} active="Community" appBar={false} sidebar={false} />}>
+      {/* Community is public, so it keeps the top bar but gets the sidebar only when
+          signed in — the rail is the viewer's own library, not part of the page. */}
+      <Route element={<AppLayout links={APP_LINKS} />}>
         <Route path="/community" element={<CommunityPage />} />
       </Route>
 
       {/* Authenticated app */}
-      <Route element={<AppLayout links={APP_LINKS} active="My Snippets" />}>
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/snippets/new" element={<NewSnippetPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
+      <Route element={<AppLayout links={APP_LINKS} />}>
+        <Route element={<RequireAuth />}>
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/snippets/new" element={<NewSnippetPage />} />
+          <Route path="/collections" element={<CollectionsPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+        </Route>
       </Route>
 
-      <Route element={<AppLayout links={APP_LINKS} active="My Snippets" appBar={false} sidebar={false} wide />}>
+      {/* Public snippets and member profiles are viewable signed out, so these stay
+          unguarded — the pages fall back to the public endpoints with no session.
+          Neither needs the library rail beside it. */}
+      <Route element={<AppLayout links={APP_LINKS} sidebar={false} />}>
         <Route path="/snippet/:id" element={<SnippetDetailPage />} />
+        <Route path="/user/:id" element={<UserPage />} />
       </Route>
 
       <Route element={<SiteLayout />}>
+        {/* `/error/500` and friends, for anything that needs to show a specific
+            code. `?code=` on the bare path works too. */}
+        <Route path="/error/:status" element={<ErrorPageRoute />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>

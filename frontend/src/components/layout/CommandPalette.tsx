@@ -1,33 +1,62 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CornerDownLeft, Search } from 'lucide-react'
 
 import { LanguageDot } from '@/components/ui/LanguageBadge'
-import { snippets } from '@/lib/data'
+import { useAuth } from '@/hooks/useAuth'
+import { useDebounce } from '@/hooks/useDebounce'
+import { snippetsApi } from '@/lib/api'
+import { toSnippets } from '@/lib/mappers'
 import { cx } from '@/lib/format'
+import type { Snippet } from '@/lib/types'
 
 interface CommandPaletteProps {
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
-/** ⌘K quick search over every snippet in the mock library. */
+/** Signed-in users search their own library; everyone else searches public snippets. */
+const RESULT_LIMIT = 8
+
+/** ⌘K quick search over snippets. */
 export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const [query, setQuery] = useState('')
   const [cursor, setCursor] = useState(0)
+  const [results, setResults] = useState<Snippet[]>([])
+  const [searching, setSearching] = useState(false)
   const navigate = useNavigate()
+  const { status } = useAuth()
 
-  const results = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    if (!q) return snippets.slice(0, 8)
-    return snippets
-      .filter((s) =>
-        [s.title, s.description, s.language, ...s.tags].join(' ').toLowerCase().includes(q),
-      )
-      .slice(0, 8)
-  }, [query])
+  const search = useDebounce(query, 250)
 
-  useEffect(() => setCursor(0), [query])
+  useEffect(() => {
+    if (!open) return
+    let cancelled = false
+    setSearching(true)
+
+    void (async () => {
+      try {
+        const params = { limit: RESULT_LIMIT, search: search || undefined }
+        const result =
+          status === 'authed'
+            ? await snippetsApi.mine(params)
+            : await snippetsApi.publicList(params)
+        if (!cancelled) setResults(toSnippets(result.items))
+      } catch {
+        // A failed search leaves the previous results in place; the panel stays
+        // usable rather than emptying to "no matches".
+        if (!cancelled) setResults([])
+      } finally {
+        if (!cancelled) setSearching(false)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [search, open, status])
+
+  useEffect(() => setCursor(0), [search])
 
   useEffect(() => {
     if (!open) return
@@ -95,7 +124,9 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
         </div>
 
         <ul className="max-h-[52vh] overflow-y-auto p-2">
-          {results.length === 0 ? (
+          {searching ? (
+            <li className="px-3 py-6 text-center text-[13px] text-t3">Searching…</li>
+          ) : results.length === 0 ? (
             <li className="px-3 py-6 text-center text-[13px] text-t3">
               No snippets match “{query}”
             </li>

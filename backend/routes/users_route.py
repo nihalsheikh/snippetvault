@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime, timezone, timedelta
 
 from middleware.rate_limit import limiter
-from emails.email_service import send_verification_email
+from emails.email_service import send_password_reset_email, send_verification_email
 from config.env_config import env_settings
 from config.jwt_config import refresh_token_expire_days
 from models import User, RefreshToken, EmailVerificationToken
@@ -33,9 +33,11 @@ from schemas.user_req_res import (
     UserProfileUpdateRequest,
     UserEmailUpdateRequest,
     UserEmailVerificationRequest,
+    UserEmailResendRequest,
     UserPasswordChangeRequest,
     UserPasswordChangeResponse,
     UserPasswordResetRequest,
+    UserPasswordForgotRequest,
     UserAccountDeleteResponse,
 )
 
@@ -44,6 +46,31 @@ router = APIRouter(prefix="/api", tags=["User"])
 
 def build_verification_url(raw_token: str) -> str:
     return f"{env_settings.frontend_url.rstrip('/')}/verify-email?token={raw_token}"
+
+
+def build_password_reset_url(raw_token: str) -> str:
+    return f"{env_settings.frontend_url.rstrip('/')}/reset-password?token={raw_token}"
+
+
+def claim_username(email: str, db: Session) -> str:
+    """Derive a handle from the email's local part, suffixed until it's free.
+
+    The frontend shows a @handle everywhere, so leaving this null meant every new
+    account rendered an id prefix until the user visited settings to claim one.
+    The column is uniquely indexed, so two `alex@…` signups have to disagree.
+    """
+    base = email.split("@")[0].strip().lower() or "user"
+    # Matches the PATCH /auth/profile bounds so a generated handle is never one the
+    # user would be told is invalid.
+    base = base[:30]
+
+    candidate = base
+    suffix = 1
+    while db.query(User).filter(User.username == candidate).first():
+        suffix += 1
+        tail = str(suffix)
+        candidate = f"{base[: 30 - len(tail)]}{tail}"
+    return candidate
 
 
 # User Signup
@@ -71,7 +98,10 @@ def signup(
     hashed_pswd = hash_password(user_data.password)
 
     new_user = User(
-        name=user_data.name, email=user_data.email, password_hash=hashed_pswd
+        name=user_data.name,
+        email=user_data.email,
+        username=claim_username(user_data.email, db),
+        password_hash=hashed_pswd,
     )
 
     db.add(new_user)
@@ -462,6 +492,62 @@ def resend_verification_email(
     }
 
 
+# Resend Verification Email — unauthenticated
+# The authenticated variant above requires a login, which an expired signup link
+# leaves impossible: the account exists but cannot sign in until verified.
+@limiter.limit("5/minute")
+@router.post(
+    "/auth/email/resend-unauthenticated",
+    status_code=status.HTTP_200_OK,
+    response_model=UserSignupResponse,
+    summary="Resend verification email (unauthenticated)",
+    description="Reissue a verification link for an unverified account. Responds identically whether or not such an account exists.",
+)
+def resend_verification_email_unauthenticated(
+    request: Request,
+    background_tasks: BackgroundTasks,
+    resend_data: UserEmailResendRequest,
+    db: Session = Depends(get_db),
+):
+    user = (
+        db.query(User)
+        .filter(User.email == resend_data.email, User.email_verified.is_(False))
+        .first()
+    )
+
+    # Same body either way — see forgot_password.
+    if not user:
+        return {"message": "Verification email sent successfully"}
+
+    db.query(EmailVerificationToken).filter(
+        EmailVerificationToken.user_id == user.id,
+        EmailVerificationToken.purpose == "signup",
+        EmailVerificationToken.used == False,
+    ).update({"used": True}, synchronize_session=False)
+
+    raw_token = create_verification_token()
+
+    verification_token = EmailVerificationToken(
+        token_hash=hash_verification_token(raw_token),
+        user_id=user.id,
+        email=user.email,
+        purpose="signup",
+        expires_at=datetime.now(timezone.utc) + timedelta(minutes=10),
+    )
+
+    db.add(verification_token)
+    db.commit()
+
+    background_tasks.add_task(
+        send_verification_email,
+        to=user.email,
+        first_name=user.name or "there",
+        verification_url=build_verification_url(raw_token),
+    )
+
+    return {"message": "Verification email sent successfully"}
+
+
 # Change Password
 @router.patch(
     "/auth/password",
@@ -502,6 +588,61 @@ def change_password(
     db.refresh(user)
 
     return {"message": "Password changed successfully"}
+
+
+# Forgot Password — request a reset link
+@limiter.limit("5/minute")
+@router.post(
+    "/auth/password/forgot",
+    status_code=status.HTTP_200_OK,
+    response_model=UserPasswordChangeResponse,
+    summary="Request a password reset",
+    description="Send a password reset link if the email belongs to an account. Returns the same message whether or not the account exists.",
+)
+def forgot_password(
+    request: Request,
+    background_tasks: BackgroundTasks,
+    forgot_data: UserPasswordForgotRequest,
+    db: Session = Depends(get_db),
+):
+    user = db.query(User).filter(User.email == forgot_data.email).first()
+
+    # Same status and same body either way. Responding differently for unknown
+    # addresses would turn this into an account-enumeration oracle.
+    if not user:
+        return {"message": "Password reset email sent successfully"}
+
+    # Invalidate any outstanding reset links.
+    db.query(EmailVerificationToken).filter(
+        EmailVerificationToken.user_id == user.id,
+        EmailVerificationToken.purpose == "password_reset",
+        EmailVerificationToken.used == False,
+    ).update({"used": True}, synchronize_session=False)
+
+    raw_token = create_verification_token()
+
+    reset_token = EmailVerificationToken(
+        token_hash=hash_verification_token(raw_token),
+        user_id=user.id,
+        email=user.email,
+        purpose="password_reset",
+        expires_at=datetime.now(timezone.utc) + timedelta(minutes=30),
+    )
+
+    db.add(reset_token)
+    db.commit()
+
+    frontend = env_settings.frontend_url.rstrip("/")
+
+    background_tasks.add_task(
+        send_password_reset_email,
+        to=user.email,
+        first_name=user.name or "there",
+        reset_url=build_password_reset_url(raw_token),
+        resend_url=f"{frontend}/forgot-password",
+    )
+
+    return {"message": "Password reset email sent successfully"}
 
 
 # Reset Password

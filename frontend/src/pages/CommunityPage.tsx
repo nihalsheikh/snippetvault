@@ -1,19 +1,20 @@
-import { useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Search } from 'lucide-react'
 
 import { SnippetCard } from '@/components/ui/SnippetCard'
 import { FilterChip } from '@/components/ui/Chip'
 import { Avatar } from '@/components/ui/Avatar'
 import { Button } from '@/components/ui/Button'
-import { trendingSnippets, publicSnippets } from '@/lib/data'
-import { languageMeta } from '@/lib/languages'
-import { formatNumber } from '@/lib/format'
-import type { Language } from '@/lib/types'
+import { useDebounce } from '@/hooks/useDebounce'
+import { communityApi, messageOf, snippetsApi } from '@/lib/api'
+import { authorMap, toCommunityUser, toSnippets } from '@/lib/mappers'
+import { LANGUAGE_OPTIONS, languageMeta } from '@/lib/languages'
+import { setViewParam } from '@/lib/nav'
+import { formatDate } from '@/lib/format'
+import type { Author, Snippet } from '@/lib/types'
 
 type SortKey = 'copies' | 'newest' | 'trending'
-
-const LANGS: Language[] = ['typescript', 'python', 'go', 'rust', 'sql', 'bash']
 
 const SORTS: { key: SortKey; label: string }[] = [
   { key: 'copies', label: 'Most copied' },
@@ -21,43 +22,108 @@ const SORTS: { key: SortKey; label: string }[] = [
   { key: 'trending', label: 'Trending' },
 ]
 
+const PAGE_SIZE = 60
+
 export function CommunityPage() {
   const [params, setParams] = useSearchParams()
   const [query, setQuery] = useState('')
+  const search = useDebounce(query, 350)
 
-  const lang = (params.get('lang') as Language | null) ?? null
+  const lang = params.get('lang')
   const sort = (params.get('sort') as SortKey | null) ?? 'copies'
 
+  const [snippets, setSnippets] = useState<Snippet[]>([])
+  const [trending, setTrending] = useState<Snippet[]>([])
+  const [authors, setAuthors] = useState<Map<string, Author>>(new Map())
+  const [topAuthors, setTopAuthors] = useState<ReturnType<typeof toCommunityUser>[]>([])
+  const [total, setTotal] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
   function setParam(key: string, value: string | null) {
-    const next = new URLSearchParams(params)
-    if (value === null) next.delete(key)
-    else next.set(key, value)
-    setParams(next, { replace: true })
+    setParams(setViewParam(params, key, value), { replace: true })
   }
 
-  const results = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    let list = publicSnippets
-
-    if (lang) list = list.filter((s) => s.language === lang)
-    if (q) {
-      list = list.filter((s) =>
-        [s.title, s.description, s.language, ...s.tags, s.author.username]
-          .join(' ')
-          .toLowerCase()
-          .includes(q),
-      )
+  // Trending has its own endpoint, so it is fetched once and left alone while the
+  // grid refetches — the featured row shouldn't shuffle under every keystroke.
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      try {
+        const result = await snippetsApi.trending({ limit: 3 })
+        if (cancelled) return
+        setTrending(toSnippets(result.items))
+      } catch {
+        /* the featured row is decorative — a failure just leaves it empty */
+      }
+    })()
+    return () => {
+      cancelled = true
     }
+  }, [])
 
-    const sorted = [...list]
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    setError(null)
+
+    void (async () => {
+      try {
+        const [list, people] = await Promise.all([
+          snippetsApi.publicList({
+            limit: PAGE_SIZE,
+            search,
+            language: lang ?? undefined,
+          }),
+          // One roster call covers every author_id on the page — `SnippetDetails`
+          // carries only the id, so the names have to come from somewhere.
+          communityApi.users({ limit: 100 }),
+        ])
+        if (cancelled) return
+
+        const map = authorMap(people.items)
+        setSnippets(toSnippets(list.items, map))
+        setAuthors(map)
+        setTopAuthors(people.items.slice(0, 4).map(toCommunityUser))
+        setTotal(list.total)
+      } catch (err) {
+        if (!cancelled) setError(messageOf(err))
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [search, lang])
+
+  // `copies` and `newest` have no server-side sort, so both are applied to the
+  // page that was fetched.
+  const results = useMemo(() => {
+    const sorted = [...snippets]
     if (sort === 'copies') sorted.sort((a, b) => b.copies - a.copies)
     else if (sort === 'newest') sorted.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-    else sorted.sort((a, b) => Number(b.isTrending) - Number(a.isTrending) || b.copies - a.copies)
-
+    else sorted.sort((a, b) => b.copies - a.copies)
     return sorted
-  }, [query, lang, sort])
+  }, [snippets, sort])
 
-  const featured = trendingSnippets.slice(0, 3)
+  // The filter chips are built from what's actually on the page rather than a fixed
+  // list, so a snippet in a language nobody hardcoded (the create screen accepts any)
+  // is still reachable by filter.
+  const langs = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const snippet of snippets) {
+      counts.set(snippet.language, (counts.get(snippet.language) ?? 0) + 1)
+    }
+    return [...counts.keys()].sort((a, b) => {
+      // Curated languages keep their design order ahead of anything typed in.
+      const aKnown = LANGUAGE_OPTIONS.some((l) => l.id === a) ? 0 : 1
+      const bKnown = LANGUAGE_OPTIONS.some((l) => l.id === b) ? 0 : 1
+      if (aKnown !== bKnown) return aKnown - bKnown
+      return languageMeta(a).label.localeCompare(languageMeta(b).label)
+    })
+  }, [snippets])
 
   return (
     <>
@@ -83,23 +149,34 @@ export function CommunityPage() {
                 className="w-full rounded-[var(--radius-r2)] border border-b2 bg-s2 py-3 pl-10 pr-4 text-[14px] text-t1 outline-none transition-colors duration-200 placeholder:text-t4 focus:border-[color-mix(in_srgb,var(--lime)_40%,transparent)]"
               />
             </div>
-            <Button size="lg">Search</Button>
+            {/* The field already searches as you type; this submits the same query. */}
+            <Button size="lg" onClick={() => setQuery(query.trim())}>
+              Search
+            </Button>
           </div>
         </div>
       </header>
 
       <div className="mx-auto max-w-[1100px] px-7 py-7 max-lg:px-5">
         {/* ---------- trending ---------- */}
-        <section className="mb-9">
-          <div className="mb-4 font-mono text-[11px] uppercase tracking-[1.5px] text-lime">
-            Trending this week
-          </div>
-          <div className="grid grid-cols-3 gap-3.5 max-lg:grid-cols-2 max-sm:grid-cols-1">
-            {featured.map((snippet, i) => (
-              <SnippetCard key={snippet.id} snippet={snippet} trendingRank={i + 1} showAuthor />
-            ))}
-          </div>
-        </section>
+        {trending.length ? (
+          <section className="mb-9">
+            <div className="mb-4 font-mono text-[11px] uppercase tracking-[1.5px] text-lime">
+              Trending this week
+            </div>
+            <div className="grid grid-cols-3 gap-3.5 max-lg:grid-cols-2 max-sm:grid-cols-1">
+              {trending.map((snippet, i) => (
+                <SnippetCard
+                  key={snippet.id}
+                  snippet={snippet}
+                  trendingRank={i + 1}
+                  showAuthor
+                  authors={authors}
+                />
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         {/* ---------- filters ---------- */}
         <div className="mb-5 flex flex-wrap items-center gap-2.5">
@@ -108,7 +185,7 @@ export function CommunityPage() {
             <FilterChip active={!lang} onClick={() => setParam('lang', null)}>
               All
             </FilterChip>
-            {LANGS.map((l) => (
+            {langs.map((l) => (
               <FilterChip
                 key={l}
                 active={lang === l}
@@ -136,11 +213,30 @@ export function CommunityPage() {
 
         {/* ---------- results ---------- */}
         <div className="mb-4 flex items-center gap-2 font-mono text-[11px] text-t3">
-          <span>{results.length} snippets</span>
+          <span>
+            {total} snippet{total === 1 ? '' : 's'}
+          </span>
           {lang ? <span>· {languageMeta(lang).label}</span> : null}
         </div>
 
-        {results.length === 0 ? (
+        {error ? (
+          <div className="flex flex-col items-center justify-center rounded-[var(--radius-r2)] border border-dashed border-b2 py-16 text-center">
+            <Search size={24} className="mb-3 text-t4" strokeWidth={1.5} />
+            <p className="mb-1 text-[14px] font-medium text-t2">Couldn't load the community</p>
+            <p className="mb-5 max-w-[380px] text-[13px] text-t3">{error}</p>
+            <button
+              type="button"
+              onClick={() => setParam('sort', sort)}
+              className="text-[13px] font-semibold text-lime"
+            >
+              Try again →
+            </button>
+          </div>
+        ) : loading ? (
+          <div className="flex flex-col items-center justify-center rounded-[var(--radius-r2)] border border-dashed border-b2 py-16 text-center">
+            <p className="text-[13px] text-t3">Loading snippets…</p>
+          </div>
+        ) : results.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-[var(--radius-r2)] border border-dashed border-b2 py-16 text-center">
             <Search size={24} className="mb-3 text-t4" strokeWidth={1.5} />
             <p className="mb-1 text-[14px] font-medium text-t2">No public snippets found</p>
@@ -154,44 +250,37 @@ export function CommunityPage() {
           </div>
         )}
 
-        {/* ---------- top authors ---------- */}
-        <section className="mt-12 border-t border-b1 pt-8">
-          <div className="mb-4 font-mono text-[11px] uppercase tracking-[1.5px] text-lime">
-            Top authors this month
-          </div>
-          <div className="grid grid-cols-4 gap-3.5 max-sm:grid-cols-2">
-            {[
-              { name: 'Priya Kulkarni', handle: 'priya_k', copies: 6204 },
-              { name: 'Marcus Bell', handle: 'mbell', copies: 4880 },
-              { name: 'Elena Novak', handle: 'enovak', copies: 3917 },
-              { name: 'Aarav Rao', handle: 'aarav_r', copies: 2745 },
-            ].map((author) => (
-              <div
-                key={author.handle}
-                className="flex items-center gap-3 rounded-[var(--radius-r2)] border border-b1 bg-s1 p-4 transition-colors hover:border-b2"
-              >
-                <Avatar
-                  author={{
-                    id: author.handle,
-                    name: author.name,
-                    username: author.handle,
-                    initials: author.name
-                      .split(' ')
-                      .map((p) => p[0])
-                      .join(''),
-                  }}
-                  size="md"
-                />
-                <div className="min-w-0">
-                  <div className="truncate text-[13px] font-semibold text-t1">{author.name}</div>
-                  <div className="truncate font-mono text-[11px] text-t3">
-                    ⎘ {formatNumber(author.copies)}
+        {/* ---------- top authors ----------
+            The roster has no per-author snippet or copy counts, so each row shows
+            the join date instead. The design's "⎘ 6,204" was invented anyway. */}
+        {topAuthors.length ? (
+          <section className="mt-12 border-t border-b1 pt-8">
+            <div className="mb-4 font-mono text-[11px] uppercase tracking-[1.5px] text-lime">
+              Newest members
+            </div>
+            <div className="grid grid-cols-4 gap-3.5 max-sm:grid-cols-2">
+              {topAuthors.map((author) => (
+                <div
+                  key={author.id}
+                  className="flex items-center gap-3 rounded-[var(--radius-r2)] border border-b1 bg-s1 p-4 transition-colors hover:border-b2"
+                >
+                  <Avatar author={author} size="md" />
+                  <div className="min-w-0">
+                    <Link
+                      to={`/user/${author.id}`}
+                      className="block truncate text-[13px] font-semibold text-t1 no-underline hover:text-lime"
+                    >
+                      {author.name}
+                    </Link>
+                    <div className="truncate font-mono text-[11px] text-t3">
+                      joined {formatDate(author.createdAt)}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </section>
+              ))}
+            </div>
+          </section>
+        ) : null}
       </div>
     </>
   )

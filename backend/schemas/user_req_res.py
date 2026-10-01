@@ -86,6 +86,13 @@ class UserEmailVerificationRequest(BaseModel):
     token: str
 
 
+# Resend verification email — unauthenticated, so the user must identify the
+# account by the address the link was sent to. Responds identically whether or
+# not an unverified account exists for it.
+class UserEmailResendRequest(BaseModel):
+    email: EmailStr
+
+
 # Password change req
 class UserPasswordChangeRequest(BaseModel):
     current_password: str
@@ -103,6 +110,12 @@ class UserPasswordResetRequest(BaseModel):
     token: str
     new_password: str = Field(..., min_length=6, max_length=128)
     confirm_new_password: str = Field(..., min_length=6, max_length=128)
+
+
+# Forgot password request — deliberately carries no field that reveals whether
+# an account exists. Same response either way.
+class UserPasswordForgotRequest(BaseModel):
+    email: EmailStr
 
 
 # Account Delete

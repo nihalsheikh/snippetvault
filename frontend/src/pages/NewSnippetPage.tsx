@@ -1,13 +1,14 @@
-import { useCallback, useMemo, useState, type ReactNode } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import Editor from '@monaco-editor/react'
 import { useTheme } from '@/hooks/useTheme'
-import { Bot, Globe, Lock, Plus, X } from 'lucide-react'
+import { Bot, Check, FilePlus2, Globe, Lock, X } from 'lucide-react'
 
 import { Button } from '@/components/ui/Button'
 import { InlineCode } from '@/components/ui/CodeBlock'
 import { LanguageDot } from '@/components/ui/LanguageBadge'
-import { CREATE_LANGUAGES, EXTENSIONS, languageMeta, slugify } from '@/lib/languages'
+import { aiApi, ApiError, messageOf, snippetsApi } from '@/lib/api'
+import { LANGUAGE_OPTIONS, extensionFor, languageMeta, normalizeLanguage, slugify } from '@/lib/languages'
 import { countLines, cx } from '@/lib/format'
 import type { Language, Visibility } from '@/lib/types'
 
@@ -35,9 +36,33 @@ export function useDebounce<T>(
 
 const SUGGESTED_TAGS = ['hooks', 'typescript', 'react', 'debounce', 'utils', 'patterns']
 
+/**
+ * A failure from `/api/ai/explain` needs its own wording: the raw `detail` is either a
+ * provider error string nobody can act on, or a 401/429 that looks identical in the
+ * generic handler. The two common cases get a sentence; anything else falls through to
+ * the server's message, which is better than a blank.
+ */
+function explainErrorCopy(err: unknown): string {
+  if (err instanceof ApiError) {
+    if (err.status === 401) return 'Sign in to use Explain with AI.'
+    if (err.status === 429) return 'You’ve hit the rate limit — try again in a minute.'
+    if (err.status === 502) {
+      // The route forwards the provider's own message, which is the only thing
+      // that can say *why* — a bad key, an unknown model id and an empty
+      // response all land on 502 and are indistinguishable by status alone.
+      return `${err.message} Your snippet is unaffected — save it and try again later.`
+    }
+  }
+  return messageOf(err)
+}
+
 export function NewSnippetPage() {
   const navigate = useNavigate()
   const { isLight } = useTheme()
+  const [params] = useSearchParams()
+
+  // `/snippets/new?edit=<id>` turns this into the editor for an existing snippet.
+  const editId = params.get('edit')
 
   const [language, setLanguage] = useState<Language>('typescript')
   const [code, setCode] = useState(SEED)
@@ -49,12 +74,38 @@ export function NewSnippetPage() {
   const [tagDraft, setTagDraft] = useState('')
   const [visibility, setVisibility] = useState<Visibility>('public')
   const [explaining, setExplaining] = useState(false)
-  const [explanation, setExplanation] = useState(
-    "This hook wraps React's useState and useEffect to delay updating a value until the input stops changing for delay ms. The cleanup function clears the previous timer on each render, ensuring only the final value triggers an update.",
-  )
+  const [explanation, setExplanation] = useState<string | null>(null)
+  const [explainError, setExplainError] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  // Editing starts from the stored snippet rather than the seed above.
+  useEffect(() => {
+    if (!editId) return
+    let cancelled = false
+    void (async () => {
+      try {
+        const existing = await snippetsApi.owned(editId)
+        if (cancelled) return
+        setTitle(existing.title)
+        setDescription(existing.description ?? '')
+        setCode(existing.code)
+        setLanguage(normalizeLanguage(existing.language) || 'typescript')
+        setTags(existing.tags.map((tag) => tag.name))
+        setVisibility(existing.is_public ? 'public' : 'private')
+        setExplanation(existing.ai_explanation)
+      } catch (err) {
+        if (!cancelled) setLoadError(messageOf(err))
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [editId])
 
   const filename = useMemo(
-    () => `${slugify(title || 'snippet')}.${EXTENSIONS[language]}`,
+    () => `${slugify(title || 'snippet')}.${extensionFor(language)}`,
     [title, language],
   )
   const lines = countLines(code)
@@ -69,25 +120,53 @@ export function NewSnippetPage() {
     setCode(value ?? '')
   }
 
-  // Local stand-in for the explain endpoint; the fetch to /api/snippets/explain
-  // lands here, and `setExplanation` receives the returned prose.
-  const explain = useCallback(() => {
+  // `/api/ai/explain` previews the code without saving anything; persisting it is
+  // a separate call once there's a snippet id to attach it to.
+  const explain = useCallback(async () => {
+    if (!code.trim()) return
     setExplaining(true)
-    window.setTimeout(() => {
-      setExplanation(
-        `This snippet is written in ${languageMeta(language).label} and runs to ${countLines(
-          code,
-        )} lines. It defines \`${slugify(title) || 'snippet'}\`, leaning on \`${
-          language === 'typescript' ? 'useState' : languageMeta(language).label
-        }\` for its core behaviour. Replace this placeholder with the model output from
-        \`POST /api/snippets/explain\`.`,
-      )
+    setError(null)
+    setExplainError(null)
+    try {
+      const res = await aiApi.explain({ code, language, title: title || undefined })
+      setExplanation(res.explanation)
+    } catch (err) {
+      // Its own message, next to the button. Sharing `error` with the save path buried
+      // an AI failure at the bottom of the sidebar, where it read as a dead button.
+      setExplainError(explainErrorCopy(err))
+    } finally {
       setExplaining(false)
-    }, 900)
+    }
   }, [code, language, title])
 
-  function save(publish: boolean) {
-    navigate('/dashboard', { state: { saved: publish ? 'published' : 'draft' } })
+  async function save(publish: boolean) {
+    if (saving) return
+    setSaving(true)
+    setError(null)
+    try {
+      const payload = {
+        title: title.trim(),
+        description: description.trim() || null,
+        code,
+        language,
+        is_public: publish ? true : visibility === 'public',
+        tags,
+      }
+      const saved = editId
+        ? await snippetsApi.update(editId, payload)
+        : await snippetsApi.create(payload)
+
+      // Only attach the preview explanation if the user asked for one — otherwise
+      // the ad-hoc text would overwrite whatever was already stored.
+      if (explanation && !saved.ai_explanation) {
+        await snippetsApi.explain(saved.id).catch(() => {})
+      }
+
+      navigate(`/snippet/${saved.id}`, { replace: true })
+    } catch (err) {
+      setError(messageOf(err))
+      setSaving(false)
+    }
   }
 
   return (
@@ -99,20 +178,21 @@ export function NewSnippetPage() {
             <LanguageDot language={language} />
             {filename}
           </div>
-          <button
-            type="button"
-            className="flex cursor-pointer items-center gap-2 border-r border-b-1 border-b-2 border-b-transparent px-4 py-3 font-mono text-[12px] text-t2 transition-colors hover:text-t1"
-          >
-            <Plus size={12} className="text-t4" />
-            New
-          </button>
+          {/* This screen is already the new-snippet form, so there is no second
+              tab to switch to. */}
+          <div className="flex items-center gap-2 border-r border-b-1 border-b-2 border-b-transparent px-4 py-3 font-mono text-[12px] text-t4">
+            <FilePlus2 size={12} />
+            {editId ? 'Editing' : 'Untitled'}
+          </div>
         </div>
 
         <div className="relative min-h-[500px] flex-1 bg-[color-mix(in_srgb,var(--bg)_85%,transparent)]">
           <Editor
             height="100%"
             defaultLanguage={language}
-            language={language}
+            // Monaco logs a warning and drops to plaintext for an id it has no grammar
+            // for, and a language the user typed in won't have one.
+            language={LANGUAGE_OPTIONS.some((l) => l.id === language) ? language : 'plaintext'}
             value={code}
             onChange={onEditorChange}
             theme={isLight ? 'vs' : 'vs-dark'}
@@ -149,6 +229,15 @@ export function NewSnippetPage() {
             {explaining ? 'Explaining…' : 'Explain with AI'}
           </button>
         </div>
+
+        {explainError ? (
+          <p
+            role="alert"
+            className="border-t border-b1 bg-[color-mix(in_srgb,var(--red)_8%,transparent)] px-5 py-2.5 text-[12px] text-red"
+          >
+            {explainError}
+          </p>
+        ) : null}
       </div>
 
       {/* ---------- metadata panel ---------- */}
@@ -172,24 +261,8 @@ export function NewSnippetPage() {
           />
         </Panel>
 
-        <Panel label="Language">
-          <div className="grid grid-cols-3 gap-1.5">
-            {CREATE_LANGUAGES.map((lang) => (
-              <button
-                key={lang}
-                type="button"
-                onClick={() => setLanguage(lang)}
-                className={cx(
-                  'cursor-pointer rounded-[var(--radius-r1)] border px-1.5 py-[7px] text-center font-mono text-[11px] transition-all duration-150',
-                  language === lang
-                    ? 'border-[color-mix(in_srgb,var(--lime)_35%,transparent)] bg-[color-mix(in_srgb,var(--lime)_5%,transparent)] text-lime'
-                    : 'border-b1 bg-s2 text-t2 hover:border-b2',
-                )}
-              >
-                {languageMeta(lang).label}
-              </button>
-            ))}
-          </div>
+        <Panel label="Language" note="type any">
+          <LanguagePicker value={language} onChange={setLanguage} />
         </Panel>
 
         <Panel label="Tags" note="press Enter">
@@ -263,32 +336,50 @@ export function NewSnippetPage() {
           </div>
         </Panel>
 
-        <section className="border-b border-b1 pb-5">
-          <div className="mb-2.5 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.5px] text-purple">
-            <Bot size={12} />
-            AI Explanation
-          </div>
-          <div className="rounded-[var(--radius-r2)] border border-[color-mix(in_srgb,var(--purple)_20%,transparent)] bg-[color-mix(in_srgb,var(--purple)_6%,transparent)] p-3.5">
-            <div className="mb-2 font-mono text-[11px] tracking-[0.5px] text-purple">
-              ✦ Generated explanation
+        {explanation ? (
+          <section className="border-b border-b1 pb-5">
+            <div className="mb-2.5 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.5px] text-purple">
+              <Bot size={12} />
+              AI Explanation
             </div>
-            <p className="text-[12px] leading-[1.7] text-t2">
-              {explanation.split(/(`[^`]+`)/g).map((part, i) =>
-                part.startsWith('`') && part.endsWith('`') ? (
-                  <InlineCode key={i}>{part.slice(1, -1)}</InlineCode>
-                ) : (
-                  <span key={i}>{part}</span>
-                ),
-              )}
-            </p>
-          </div>
-        </section>
+            <div className="rounded-[var(--radius-r2)] border border-[color-mix(in_srgb,var(--purple)_20%,transparent)] bg-[color-mix(in_srgb,var(--purple)_6%,transparent)] p-3.5">
+              <div className="mb-2 font-mono text-[11px] tracking-[0.5px] text-purple">
+                ✦ Generated explanation
+              </div>
+              <p className="text-[12px] leading-[1.7] text-t2">
+                {explanation.split(/(`[^`]+`)/g).map((part, i) =>
+                  part.startsWith('`') && part.endsWith('`') ? (
+                    <InlineCode key={i}>{part.slice(1, -1)}</InlineCode>
+                  ) : (
+                    <span key={i}>{part}</span>
+                  ),
+                )}
+              </p>
+            </div>
+          </section>
+        ) : null}
+
+        {error || loadError ? (
+          <p role="alert" className="text-[12px] text-t3">
+            {error ?? loadError}
+          </p>
+        ) : null}
 
         <div className="flex flex-col gap-2">
-          <Button size="lg" onClick={() => save(true)} disabled={!title.trim() || !code.trim()}>
-            Publish snippet →
+          {/* A snippet is either public or private — "draft" is the private state,
+              so this pair is really publish / keep-private. */}
+          <Button
+            size="lg"
+            onClick={() => void save(true)}
+            disabled={!title.trim() || !code.trim() || saving}
+          >
+            {saving ? 'Saving…' : editId ? 'Save changes →' : 'Publish snippet →'}
           </Button>
-          <Button variant="outline" onClick={() => save(false)} disabled={!title.trim()}>
+          <Button
+            variant="outline"
+            onClick={() => void save(false)}
+            disabled={!title.trim() || saving}
+          >
             Save as draft
           </Button>
         </div>
@@ -299,6 +390,118 @@ export function NewSnippetPage() {
 
 const PANEL_INPUT =
   'w-full rounded-[var(--radius-r1)] border border-b1 bg-s2 px-3 py-2.5 text-[13px] text-t1 outline-none transition-colors duration-200 placeholder:text-t4 focus:border-[color-mix(in_srgb,var(--lime)_35%,transparent)]'
+
+/** The backend validates `language` as 1–50 chars, so the field stops there. */
+const LANGUAGE_MAX = 50
+
+/**
+ * Language chooser.
+ *
+ * A text field with the curated list as suggestions: the backend stores a free string
+ * (`models/snippets_model.py` — `Column(String)`), so anything the user types is
+ * stored as typed and rendered with a generated colour and label by `languageMeta`.
+ * The previous six-button grid made every other language unreachable.
+ */
+function LanguagePicker({ value, onChange }: { value: Language; onChange: (next: Language) => void }) {
+  const [draft, setDraft] = useState(value)
+  const [open, setOpen] = useState(false)
+
+  // The field is the source of truth while the user is in it; the stored value only
+  // catches up when they commit one.
+  useEffect(() => {
+    setDraft(value)
+  }, [value])
+
+  const needle = draft.trim().toLowerCase()
+  const matches = LANGUAGE_OPTIONS.filter(
+    (option) => !needle || option.label.toLowerCase().includes(needle) || option.id.includes(needle),
+  )
+  // A language already chosen that isn't in the curated list still shows as a chip, so
+  // editing a snippet saved as `elixir` doesn't silently lose that selection.
+  const custom = value && !LANGUAGE_OPTIONS.some((option) => option.id === value)
+
+  function commit(raw: string) {
+    const next = normalizeLanguage(raw)
+    if (next) onChange(next)
+    else setDraft(value)
+  }
+
+  return (
+    <div className="relative">
+      <div className="mb-2 flex items-center gap-2">
+        <span className="shrink-0 rounded-[4px] px-[7px] py-0.5 font-mono text-[10px] font-semibold" style={chipStyle(languageMeta(value))}>
+          {languageMeta(value).label}
+        </span>
+        <input
+          value={draft}
+          onChange={(e) => {
+            setDraft(e.target.value)
+            setOpen(true)
+          }}
+          onFocus={() => setOpen(true)}
+          onBlur={() => {
+            // Commit on blur so a typed language survives a click straight to Save.
+            commit(draft)
+            setOpen(false)
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              commit(draft)
+              setOpen(false)
+            }
+            if (e.key === 'Escape') {
+              setDraft(value)
+              setOpen(false)
+            }
+          }}
+          maxLength={LANGUAGE_MAX}
+          placeholder="Type a language…"
+          aria-label="Language"
+          className={cx(PANEL_INPUT, 'py-1.5 font-mono text-[12px]')}
+        />
+      </div>
+
+      {custom ? (
+        <p className="mb-2 font-mono text-[10px] text-t4">
+          “{value}” isn’t one of the presets — it’s saved and shown as typed.
+        </p>
+      ) : null}
+
+      {open && matches.length ? (
+        <ul className="max-h-[180px] overflow-y-auto rounded-[var(--radius-r1)] border border-b1 bg-s2 p-1">
+          {matches.map((option) => (
+            <li key={option.id}>
+              <button
+                type="button"
+                // `onMouseDown` fires before the input's blur, so the click isn't lost.
+                onMouseDown={(e) => {
+                  e.preventDefault()
+                  onChange(option.id)
+                  setDraft(option.id)
+                  setOpen(false)
+                }}
+                className={cx(
+                  'flex w-full cursor-pointer items-center gap-2 rounded-[var(--radius-r1)] px-2 py-1.5 text-left font-mono text-[11px] transition-colors hover:bg-b1',
+                  option.id === value ? 'text-lime' : 'text-t2',
+                )}
+              >
+                <LanguageDot language={option.id} />
+                <span className="flex-1 truncate">{option.label}</span>
+                {option.id === value ? <Check size={11} /> : null}
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  )
+}
+
+/** The badge's inline background/foreground, which Tailwind can't express from a token. */
+function chipStyle(meta: ReturnType<typeof languageMeta>) {
+  return { background: meta.softBg, color: meta.color }
+}
 
 function Panel({
   label,

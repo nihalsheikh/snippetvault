@@ -1,5 +1,4 @@
 import { CodePreview } from '@/components/ui/CodeBlock'
-import { ThemeToggle } from '@/components/ui/ThemeToggle'
 
 const ENDPOINTS = [
   { method: 'GET', path: '/api/snippets', desc: 'List your snippets, filterable by language and visibility.' },
@@ -23,7 +22,6 @@ export function DocsPage() {
     <div className="mx-auto max-w-[860px] px-6 py-16">
       <div className="mb-3 flex items-center gap-3">
         <div className="mb-4 font-mono text-[11px] uppercase tracking-[2px] text-lime">Docs</div>
-        <ThemeToggle className="ml-auto" />
       </div>
 
       <h1 className="mb-4 font-serif text-[clamp(32px,5vw,52px)] leading-[1.1] tracking-[-1.5px]">

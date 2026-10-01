@@ -1,6 +1,5 @@
 import { Check } from 'lucide-react'
 import { ButtonLink } from '@/components/ui/Button'
-import { ThemeToggle } from '@/components/ui/ThemeToggle'
 
 const PLANS = [
   {
@@ -50,9 +49,6 @@ export function PricingPage() {
         <p className="mx-auto max-w-[520px] text-[16px] leading-[1.7] text-t2">
           Start free and stay free as long as you like. Upgrade only when your library outgrows it.
         </p>
-        <div className="mt-6 flex justify-center">
-          <ThemeToggle />
-        </div>
       </section>
 
       <section className="mx-auto grid max-w-[1000px] grid-cols-3 gap-3.5 px-6 pb-24 max-md:grid-cols-1">

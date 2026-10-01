@@ -1,4 +1,5 @@
 import type { Language } from './types'
+import { commentsWithHash } from './languages'
 
 /**
  * A deliberately small tokenizer that mirrors the design's syntax palette
@@ -28,8 +29,8 @@ const KEYWORDS: Record<string, string[]> = {
   other: [],
 }
 
-const KEYWORD_SET = new Map<Language, Set<string>>(
-  Object.entries(KEYWORDS).map(([lang, words]) => [lang as Language, new Set(words)]),
+const KEYWORD_SET = new Map<string, Set<string>>(
+  Object.entries(KEYWORDS).map(([lang, words]) => [lang, new Set(words)]),
 )
 
 const IDENT_RE = /[A-Za-z_$][A-Za-z0-9_$]*/
@@ -100,9 +101,15 @@ export function tokenizeLine(line: string, lang: Language): Token[] {
   return tokens
 }
 
-/** Splits a line into `[code, comment]` at the first unquoted `//`, `#` or `--`. */
+/**
+ * Splits a line into `[code, comment]` at the first unquoted `//` or `#`.
+ *
+ * The marker set comes from `commentsWithHash`, which knows the hash-comment family.
+ * Testing the id inline would have defaulted every hand-entered language to `//`, and a
+ * Ruby or shell snippet in an unknown dialect would have lost the rest of each line.
+ */
 export function splitComment(line: string, lang: Language): [string, string | null] {
-  const markers = lang === 'sql' || lang === 'bash' || lang === 'python' ? ['#'] : ['//']
+  const markers = commentsWithHash(lang) ? ['#'] : ['//']
   let inStr: '"' | "'" | '`' | null = null
 
   for (let i = 0; i < line.length; i++) {

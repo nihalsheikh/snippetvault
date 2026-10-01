@@ -34,12 +34,26 @@ class TagDetails(BaseModel):
 class AllPublicSnippetResponse(BaseModel):
     message: str
     snippets: list[SnippetDetails]
+    page: int
+    limit: int
+    total: int
+    has_next: bool
 
 
 # Single Public Snippet res
 class PublicSnippetResonse(BaseModel):
     message: str
     snippet: SnippetDetails
+
+
+# Trending public snippets res
+class TrendingSnippetResponse(BaseModel):
+    message: str
+    snippets: list[SnippetDetails]
+    page: int
+    limit: int
+    total: int
+    has_next: bool
 
 
 # Create Snippet req
@@ -56,6 +70,10 @@ class CreateSnippetRequest(BaseModel):
 class AllSnippetResponse(BaseModel):
     message: str
     snippets: list[SnippetDetails]
+    page: int
+    limit: int
+    total: int
+    has_next: bool
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -117,5 +135,9 @@ class BookmarkSnippetDetails(BaseModel):
 class AllBookmarksResponse(BaseModel):
     message: str
     bookmarks: list[BookmarkSnippetDetails]
+    page: int
+    limit: int
+    total: int
+    has_next: bool
 
     model_config = ConfigDict(from_attributes=True)

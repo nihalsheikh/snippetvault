@@ -110,7 +110,7 @@ export function SiteFooter() {
 
       <div className="mx-auto flex max-w-[1100px] flex-wrap items-center justify-between gap-4 border-t border-b1 py-5">
         <span className="text-[12px] text-t3">
-          © 2025 SnippetVault. Built by <strong className="text-t2">Nihal Sheikh</strong>.
+          © 2025 SnippetVault. Built by <strong className="text-t2">John Doe</strong>.
         </span>
         <div className="flex items-center gap-1.5 text-[12px] text-t3">
           <span className="h-[7px] w-[7px] animate-[pulse2_3s_ease-in-out_infinite] rounded-full bg-green" />

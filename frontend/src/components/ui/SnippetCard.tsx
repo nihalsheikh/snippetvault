@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Flame, MoreHorizontal } from 'lucide-react'
-import type { Snippet } from '@/lib/types'
+import type { Author, Snippet } from '@/lib/types'
 import { cx, formatNumber } from '@/lib/format'
 import { languageMeta } from '@/lib/languages'
 import { highlight, TOKEN_COLOR } from '@/lib/highlight'
@@ -33,12 +33,20 @@ export function SnippetCard({
   snippet,
   trendingRank,
   showAuthor = false,
+  authors,
 }: {
   snippet: Snippet
   trendingRank?: number
   showAuthor?: boolean
+  /**
+   * `SnippetDetails` carries only `author_id`. When a page has loaded the community
+   * roster, passing it resolves the real handle; without it the card falls back to
+   * whatever the mapper derived.
+   */
+  authors?: Map<string, Author>
 }) {
   const meta = languageMeta(snippet.language)
+  const author = snippet.authorId ? authors?.get(snippet.authorId) : undefined
 
   return (
     <article
@@ -74,13 +82,9 @@ export function SnippetCard({
           </h3>
           <p className="truncate text-[11px] text-t3">{snippet.description}</p>
         </div>
-        <button
-          type="button"
-          aria-label={`Options for ${snippet.title}`}
-          className="relative z-10 shrink-0 rounded p-0.5 text-t4 transition-colors hover:text-t1"
-        >
-          <MoreHorizontal size={16} />
-        </button>
+        {/* No per-snippet menu exists in the backend (no rename, move, or report
+            endpoint), so this is left out rather than given dead controls. */}
+        <MoreHorizontal size={16} className="shrink-0 text-t4" aria-hidden="true" />
       </div>
 
       <CardCode snippet={snippet} />
@@ -92,7 +96,7 @@ export function SnippetCard({
         ))}
         <div className="ml-auto flex items-center gap-3 font-mono text-[11px] text-t3">
           {showAuthor ? (
-            <span className="text-t4">@{snippet.author.username}</span>
+            <span className="text-t4">@{(author ?? snippet.author).username}</span>
           ) : null}
           <span className="flex items-center gap-1">
             <CopyCountIcon />

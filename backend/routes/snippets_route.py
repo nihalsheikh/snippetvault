@@ -8,8 +8,10 @@ from config.env_config import env_settings
 from models import Snippet, Tag, User, SnippetBookmark
 from utils.get_db import get_db
 from auth.token import get_current_user_id
+from services.ai_service import AIServiceError, explain_snippet
 from schemas.snippet_req_res import (
     AllPublicSnippetResponse,
+    TrendingSnippetResponse,
     PublicSnippetResonse,
     CreateSnippetRequest,
     AllSnippetResponse,
@@ -59,11 +61,61 @@ def get_public_snippets(
             | Snippet.code.ilike(search_term)
         )
 
+    total = query.count()
+
     public_snippets = (
         query.order_by(Snippet.created_at.desc()).offset(offset).limit(limit).all()
     )
 
-    return {"message": "Fetched all public snippets", "snippets": public_snippets}
+    return {
+        "message": "Fetched all public snippets",
+        "snippets": public_snippets,
+        "page": page,
+        "limit": limit,
+        "total": total,
+        "has_next": offset + len(public_snippets) < total,
+    }
+
+
+# Trending public snippets
+@router.get(
+    "/snippets/trending",
+    status_code=status.HTTP_200_OK,
+    response_model=TrendingSnippetResponse,
+    summary="Get trending snippets",
+    description="Retrieve public snippets ranked by copy count, newest first as the tiebreak.",
+)
+def get_trending_snippets(
+    request: Request,
+    page: int = 1,
+    limit: int = 10,
+    language: str | None = None,
+    db: Session = Depends(get_db),
+):
+    offset = (page - 1) * limit
+
+    query = db.query(Snippet).filter(Snippet.is_public.is_(True))
+
+    if language:
+        query = query.filter(Snippet.language == language)
+
+    total = query.count()
+
+    trending = (
+        query.order_by(Snippet.copy_count.desc(), Snippet.created_at.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+
+    return {
+        "message": "Fetched trending snippets",
+        "snippets": trending,
+        "page": page,
+        "limit": limit,
+        "total": total,
+        "has_next": offset + len(trending) < total,
+    }
 
 
 # Fetch one public snippet
@@ -177,6 +229,8 @@ def get_user_snippets(
             | Snippet.code.ilike(search_term)
         )
 
+    total = query.count()
+
     snippets = (
         query.order_by(Snippet.created_at.desc()).offset(offset).limit(limit).all()
     )
@@ -184,6 +238,10 @@ def get_user_snippets(
     return {
         "message": "Fetched all user snippets",
         "snippets": snippets,
+        "page": page,
+        "limit": limit,
+        "total": total,
+        "has_next": offset + len(snippets) < total,
     }
 
 
@@ -329,6 +387,59 @@ def delete_user_snippet(
     }
 
 
+# Generate an AI explanation for an owned snippet and store it
+@limiter.limit("10/minute")
+@router.post(
+    "/snippets/{snippet_id}/explain",
+    status_code=status.HTTP_200_OK,
+    response_model=UserSnippetResponse,
+    summary="Explain a snippet with AI",
+    description="Generate an explanation for one of the authenticated user's snippets and persist it to ai_explanation.",
+)
+def explain_user_snippet(
+    request: Request,
+    snippet_id: UUID,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    snippet = (
+        db.query(Snippet)
+        .filter(
+            Snippet.id == snippet_id,
+            Snippet.author_id == user_id,
+        )
+        .first()
+    )
+
+    if not snippet:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Snippet not found",
+        )
+
+    try:
+        explanation = explain_snippet(
+            code=snippet.code,
+            language=snippet.language,
+            title=snippet.title,
+        )
+    except AIServiceError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"AI explanation unavailable: {exc}",
+        )
+
+    snippet.ai_explanation = explanation
+
+    db.commit()
+    db.refresh(snippet)
+
+    return {
+        "message": "Snippet explained successfully",
+        "snippet": snippet,
+    }
+
+
 # Copy Count of a snippet
 @limiter.limit("30/minute")
 @router.post(
@@ -341,6 +452,7 @@ def delete_user_snippet(
 def copy_snippet(
     request: Request,
     snippet_id: UUID,
+    user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
     snippet = (
@@ -458,12 +570,16 @@ def remove_bookmark(
             detail="Bookmark not found",
         )
 
+    # Capture the id before the delete: once flushed, the ORM instance is
+    # expunged and attribute access on it raises.
+    bookmark_id = bookmark.id
+
     db.delete(bookmark)
     db.commit()
 
     return {
         "message": "Bookmark removed successfully",
-        "bookmark_id": bookmark.id,
+        "bookmark_id": bookmark_id,
     }
 
 
@@ -512,6 +628,8 @@ def get_user_bookmarks(
             | Snippet.code.ilike(search_term)
         )
 
+    total = query.count()
+
     snippets = (
         query.order_by(Snippet.created_at.desc()).offset(offset).limit(limit).all()
     )
@@ -519,4 +637,8 @@ def get_user_bookmarks(
     return {
         "message": "Fetched all user bookmarks",
         "bookmarks": snippets,
+        "page": page,
+        "limit": limit,
+        "total": total,
+        "has_next": offset + len(snippets) < total,
     }

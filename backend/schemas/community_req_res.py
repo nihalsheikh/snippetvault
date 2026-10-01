@@ -8,6 +8,7 @@ from schemas.snippet_req_res import SnippetDetails
 # Community Details
 class CommunityUserDetails(BaseModel):
     id: UUID
+    name: str | None = None
     username: str | None = None
     bio: str | None = None
     created_at: datetime
