@@ -72,7 +72,7 @@ function TopBarRight({ onSearch }: { onSearch: () => void }) {
         <span className="absolute right-[7px] top-[7px] h-[7px] w-[7px] rounded-full border-2 border-s1 bg-red" />
       </button>
 
-      <ThemeToggle className="h-[34px] w-[34px] justify-center px-0" />
+      <ThemeToggle />
 
       <Link to="/snippets/new">
         <Button size="sm">+ New snippet</Button>

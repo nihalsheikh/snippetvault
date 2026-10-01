@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { NavLink, Link } from 'react-router-dom'
 import { Logo } from './Logo'
+import { ThemeToggle } from './ThemeToggle'
 import { cx } from '@/lib/format'
 
 const NAV_LINKS = [
@@ -35,6 +36,8 @@ export function SiteNav() {
       </div>
 
       <div className="ml-auto flex items-center gap-2.5">
+        <ThemeToggle />
+
         <Link
           to="/auth?mode=login"
           className="rounded-[var(--radius-r2)] border border-b2 px-[18px] py-2 text-[14px] font-medium text-t1 transition-all hover:border-b3 hover:bg-b1"

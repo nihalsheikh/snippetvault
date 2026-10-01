@@ -3,3 +3,8 @@ from .oauth_model import OAuthAccount
 from .snippets_model import Snippet
 from .refresh_token_model import RefreshToken
 from .email_verification_token_model import EmailVerificationToken
+from .tag import Tag
+from .snippet_tag import SnippetTag
+from .snippet_bookmark import SnippetBookmark
+from .collection import Collection
+from .collection_snippet import CollectionSnippet
