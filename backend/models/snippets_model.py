@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String, Integer, Text, Boolean, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import ARRAY, UUID
+from sqlalchemy.dialects.postgresql import UUID
 from datetime import datetime, timezone
 import uuid
 
@@ -20,7 +20,6 @@ class Snippet(Base):
     code = Column(Text, nullable=False)
 
     language = Column(String, nullable=False)
-    tags = Column(ARRAY(String), nullable=False, default=list)
 
     is_public = Column(Boolean, nullable=False, default=True)
 
@@ -47,4 +46,10 @@ class Snippet(Base):
         nullable=False,
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    tags = relationship(
+        "Tag",
+        secondary="snippet_tags",
+        back_populates="snippets",
     )

@@ -1,9 +1,21 @@
+import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { Github, Twitter } from 'lucide-react'
 
 import { Logo } from '@/components/ui/Logo'
 
-const COLUMNS = [
+/**
+ * Typed up front: without this, TS widens each column's `links` to a union of
+ * object shapes and `link.badge` / `link.status` are not on every member.
+ */
+interface FooterLink {
+  label: string
+  to: string
+  badge?: string
+  status?: boolean
+}
+
+const COLUMNS: { title: string; links: FooterLink[] }[] = [
   {
     title: 'Product',
     links: [
@@ -120,7 +132,7 @@ export function SiteFooter() {
   )
 }
 
-function FooterBadge({ children }: { children: React.ReactNode }) {
+function FooterBadge({ children }: { children: ReactNode }) {
   return (
     <span className="rounded-[3px] border border-[color-mix(in_srgb,var(--lime)_25%,transparent)] bg-[color-mix(in_srgb,var(--lime)_12%,transparent)] px-[5px] py-px text-[9px] font-semibold tracking-[0.3px] text-lime">
       {children}
@@ -135,7 +147,7 @@ function Social({
 }: {
   href: string
   label: string
-  children: React.ReactNode
+  children: ReactNode
 }) {
   return (
     <a

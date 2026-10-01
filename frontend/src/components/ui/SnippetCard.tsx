@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom'
 import { Flame, MoreHorizontal } from 'lucide-react'
 import type { Snippet } from '@/lib/types'
-import { formatNumber } from '@/lib/format'
+import { cx, formatNumber } from '@/lib/format'
 import { languageMeta } from '@/lib/languages'
 import { highlight, TOKEN_COLOR } from '@/lib/highlight'
 import { Tag } from './Chip'
+import { LanguageBadge } from './LanguageBadge'
 
 /** The first few lines of a snippet, highlighted for the card preview. */
 function CardCode({ snippet, lines = 4 }: { snippet: Snippet; lines?: number }) {

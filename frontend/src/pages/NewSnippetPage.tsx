@@ -69,11 +69,22 @@ export function NewSnippetPage() {
     setCode(value ?? '')
   }
 
-  // Local stand-in for the explain endpoint; wired to /api/snippets/explain later.
+  // Local stand-in for the explain endpoint; the fetch to /api/snippets/explain
+  // lands here, and `setExplanation` receives the returned prose.
   const explain = useCallback(() => {
     setExplaining(true)
-    window.setTimeout(() => setExplaining(false), 900)
-  }, [])
+    window.setTimeout(() => {
+      setExplanation(
+        `This snippet is written in ${languageMeta(language).label} and runs to ${countLines(
+          code,
+        )} lines. It defines \`${slugify(title) || 'snippet'}\`, leaning on \`${
+          language === 'typescript' ? 'useState' : languageMeta(language).label
+        }\` for its core behaviour. Replace this placeholder with the model output from
+        \`POST /api/snippets/explain\`.`,
+      )
+      setExplaining(false)
+    }, 900)
+  }, [code, language, title])
 
   function save(publish: boolean) {
     navigate('/dashboard', { state: { saved: publish ? 'published' : 'draft' } })

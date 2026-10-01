@@ -1,9 +1,11 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 
 from database.db import Base, engine
+from config.env_config import env_settings
 from models import User, Snippet, OAuthAccount, RefreshToken
 from middleware.exception_handler import (
     global_exception_handler,
@@ -14,11 +16,23 @@ from middleware.exception_handler import (
 from routes.health_route import router as health_router
 from routes.users_route import router as user_router
 
+
 Base.metadata.create_all(bind=engine)
 
 BASE_DIR = Path(__file__).resolve().parent
 
+
 app = FastAPI(title="SnippetVault API")
+
+
+# CORS Middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[env_settings.frontend_url],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 # Email Template Icons

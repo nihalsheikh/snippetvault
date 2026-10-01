@@ -9,19 +9,10 @@ function currentTheme(): Theme {
 }
 
 /**
- * Whether the browser can animate the theme change. Safari and any browser without
- * the View Transitions API falls back to an instant swap.
- */
-function supportsViewTransitions(): boolean {
-  return typeof document !== 'undefined' && 'startViewTransition' in document
-}
-
-/**
  * Circular wipe that reveals the new theme from the toggle's position.
  *
- * The page's own CSS transitions are suppressed for the duration so the old and
- * new snapshots stay static; without this the snapshot cross-fade fights the
- * clip animation and you get a muddy double-wipe.
+ * The default cross-fade on the snapshots is disabled in theme.css so only the
+ * clip-path animation runs; otherwise the two blend and the wipe looks muddy.
  */
 export function useTheme() {
   const [theme, setThemeState] = useState<Theme>(currentTheme)
@@ -41,9 +32,9 @@ export function useTheme() {
 
   const setTheme = useCallback(
     (next: Theme, origin?: { x: number; y: number }) => {
-      const root = document.documentElement
+      const start = document.startViewTransition?.bind(document)
 
-      if (!supportsViewTransitions() || !origin) {
+      if (!start || !origin) {
         applyTheme(next)
         return
       }
@@ -51,7 +42,7 @@ export function useTheme() {
       const { x, y } = origin
       const radius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y))
 
-      const transition = document.startViewTransition(() => applyTheme(next))
+      const transition = start(() => applyTheme(next))
 
       transition.ready.then(() => {
         document.documentElement.animate(
