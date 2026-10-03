@@ -7,7 +7,6 @@ import { RequireAuth } from '@/components/RequireAuth'
 
 import { LandingPage } from '@/pages/LandingPage'
 import { AuthPage } from '@/pages/AuthPage'
-import { PricingPage } from '@/pages/PricingPage'
 import { DocsPage } from '@/pages/DocsPage'
 import { CommunityPage } from '@/pages/CommunityPage'
 import { DashboardPage } from '@/pages/DashboardPage'
@@ -57,7 +56,6 @@ export default function App() {
       <Route path="/auth/callback" element={<OAuthCallbackPage />} />
 
       <Route element={<SiteLayout />}>
-        <Route path="/pricing" element={<PricingPage />} />
         <Route path="/docs" element={<DocsPage />} />
         {/* Arrives from an email, so they stand alone too */}
         <Route path="/verify-email" element={<VerifyEmailPage />} />

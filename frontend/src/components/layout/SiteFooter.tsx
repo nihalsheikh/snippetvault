@@ -20,7 +20,6 @@ const COLUMNS: { title: string; links: FooterLink[] }[] = [
     title: 'Product',
     links: [
       { label: 'Features', to: '/#features' },
-      { label: 'Pricing', to: '/pricing' },
       { label: 'Changelog', to: '/community', badge: 'NEW' },
       { label: 'Roadmap', to: '/docs' },
       { label: 'API', to: '/docs' },

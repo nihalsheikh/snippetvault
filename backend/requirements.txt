@@ -38,7 +38,11 @@ pathspec==1.1.1
 platformdirs==4.12.2
 proto-plus==1.28.2
 protobuf==5.29.6
-psycopg2-binary==2.9.13
+# SQLAlchemy 2.1 imports `psycopg` (v3) for a `postgresql://` URL and no longer falls
+# back to `psycopg2`. psycopg2 also has no wheels for Python 3.14, so it silently fails
+# to install there and the app dies at import with `No module named 'psycopg'`.
+# `[binary]` bundles libpq, so no system package is needed on Render.
+psycopg[binary]==3.3.6
 pyasn1==0.6.4
 pyasn1-modules==0.4.2
 pycparser==3.0

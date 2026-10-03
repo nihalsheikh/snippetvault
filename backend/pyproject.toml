@@ -11,7 +11,6 @@ dependencies = [
     "fastapi>=0.142.1",
     "google-genai>=1.0.0",
     "httpx>=0.28.1",
-    "psycopg2-binary>=2.9.13",
     "psycopg[binary]>=3.3.6",
     "pydantic-settings>=2.15.0",
     "pydantic[email]>=2.13.5",

@@ -13,13 +13,9 @@ import { isSameView } from '@/lib/nav'
 import { avatarGradient, cx, initialsOf } from '@/lib/format'
 import type { Author, Language } from '@/lib/types'
 
-/** There is no billing backend; this is a static product limit shown as-is. */
-const PLAN = { name: 'FREE PLAN', limit: 100 }
-
 /**
  * `/api/snippets` returns a page, so the per-language counts here only cover what was
- * fetched. `limit` caps at 100 and a Free account holds at most that many, so for this
- * figure a single page is the whole library — same ceiling `PLAN.limit` assumes.
+ * fetched, not the whole library.
  */
 const LANGUAGE_SCAN_LIMIT = 100
 
@@ -84,8 +80,6 @@ export function DashboardSidebar() {
         profileImage: profile.profileImage,
       }
     : { id: '', name: 'Loading…', username: '', initials: '··', avatarGradient: avatarGradient('') }
-
-  const usedPercent = Math.min(100, Math.round((counts.all / PLAN.limit) * 100))
 
   // Every `to` here is paired with a `label` on purpose: the previous version derived
   // it from the last path segment, which rendered `dashboard?view=bookmarks` verbatim.
@@ -162,25 +156,10 @@ export function DashboardSidebar() {
         />
       </nav>
 
-      <div className="mt-auto flex items-center justify-between gap-2 border-t border-b1 p-4">
-        <div className="min-w-0 flex-1">
-          <span className="inline-block rounded-[4px] border border-[color-mix(in_srgb,var(--lime)_20%,transparent)] bg-[color-mix(in_srgb,var(--lime)_8%,transparent)] px-2 py-1 font-mono text-[10px] text-lime">
-            {PLAN.name}
-          </span>
-          <div className="mt-2 text-[11px] text-t3">
-            {counts.all}/{PLAN.limit} snippets used
-          </div>
-          <div className="mt-1.5 h-[3px] overflow-hidden rounded-[2px] bg-b1">
-            <div
-              className="h-full rounded-[2px] bg-lime"
-              style={{ width: `${usedPercent}%` }}
-              role="progressbar"
-              aria-valuenow={counts.all}
-              aria-valuemin={0}
-              aria-valuemax={PLAN.limit}
-            />
-          </div>
-        </div>
+      {/* No plan meter here. There is no billing backend and no plan on the account,
+          so a "FREE · 0/100" badge would be a limit the server never enforces — it
+          told people they were near a ceiling that did not exist. */}
+      <div className="mt-auto flex items-center justify-end gap-2 border-t border-b1 p-4">
         <ThemeToggle className="h-[34px] w-[34px]" />
       </div>
     </aside>

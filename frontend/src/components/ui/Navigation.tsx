@@ -6,7 +6,6 @@ import { isSameView } from '@/lib/nav'
 
 const NAV_LINKS = [
   { to: '/#features', label: 'Features' },
-  { to: '/pricing', label: 'Pricing' },
   { to: '/community', label: 'Community' },
   { to: '/community', label: 'Changelog', badge: 'NEW' },
   { to: '/docs', label: 'Docs' },
