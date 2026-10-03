@@ -30,9 +30,12 @@ opentelemetry-api==1.45.0
 packaging==26.3
 pathspec==1.1.1
 platformdirs==4.12.2
+# SQLAlchemy 2.1 imports `psycopg` (v3) for a `postgresql://` URL and no longer falls
+# back to `psycopg2`. psycopg2 has no wheels for Python 3.14, so it fails to install
+# there and the app dies at import with `No module named 'psycopg'`. `psycopg-binary`
+# bundles libpq, so no system package is needed on Render.
 psycopg==3.3.6
 psycopg-binary==3.3.6
-psycopg2-binary==2.9.13
 pyasn1==0.6.4
 pyasn1-modules==0.4.2
 pycparser==3.0
