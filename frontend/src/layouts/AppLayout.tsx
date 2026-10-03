@@ -68,14 +68,28 @@ function TopBarRight({ onSearch }: { onSearch: () => void }) {
 
   return (
     <>
+      {/* The fake placeholder ("Search snippets... ⌘K") is desktop chrome: on a phone
+          it can't be typed into, and it costs 160px of a 390px bar to say nothing.
+          The icon below is the same action — the palette it opens is a real search
+          over the user's library, and ⌘K is still bound on a desktop keyboard. */}
       <button
         type="button"
         onClick={onSearch}
-        className="flex min-w-40 items-center gap-2 rounded-[var(--radius-r1)] border border-b1 bg-s2 px-3 py-[5px] font-mono text-[11px] text-t3 transition-all hover:border-b2 hover:text-t2"
+        aria-label="Search snippets"
+        className="hidden min-w-40 items-center gap-2 rounded-[var(--radius-r1)] border border-b1 bg-s2 px-3 py-[5px] font-mono text-[11px] text-t3 transition-all hover:border-b2 hover:text-t2 md:flex"
       >
         <Search size={12} />
         <span className="flex-1 text-left">Search snippets...</span>
         <kbd className="rounded-[3px] border border-b2 bg-b1 px-[5px] py-px text-[10px]">⌘K</kbd>
+      </button>
+
+      <button
+        type="button"
+        onClick={onSearch}
+        aria-label="Search snippets"
+        className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-r1)] border border-b1 bg-s2 text-t2 transition-colors hover:border-b2 hover:text-t1 md:hidden"
+      >
+        <Search size={14} />
       </button>
 
       {/* No notifications backend, so no bell. A hardcoded unread dot would claim
@@ -83,11 +97,11 @@ function TopBarRight({ onSearch }: { onSearch: () => void }) {
 
       <ThemeToggle />
 
-      <Link to="/snippets/new">
+      <Link to="/snippets/new" className="max-sm:hidden">
         <Button size="sm">+ New snippet</Button>
       </Link>
 
-      <span className="h-5 w-px bg-b2" />
+      <span className="h-5 w-px bg-b2 max-sm:hidden" />
 
       <Link to={profile ? '/profile' : '/auth'} title={profile ? `@${user.username}` : 'Sign in'}>
         <Avatar author={user} size="md" className="border-2 border-transparent transition-colors hover:border-lime" />

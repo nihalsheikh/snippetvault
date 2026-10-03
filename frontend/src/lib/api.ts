@@ -304,6 +304,14 @@ export const authApi = {
     })
   },
 
+  /**
+   * Which social sign-ins this server has credentials for. Read once when the auth
+   * page mounts; a provider with no client id is left out rather than shown dead.
+   */
+  oauthProviders() {
+    return request<{ message: string; providers: string[] }>('/auth/oauth/providers')
+  },
+
   profile() {
     return request<SingleDto<UserDto>>('/auth/profile', { auth: true })
   },

@@ -9,6 +9,7 @@ from config.env_config import env_settings
 from config.jwt_config import refresh_token_expire_days
 from models import User, RefreshToken, EmailVerificationToken
 from utils.get_db import get_db
+from utils.username import claim_username
 from auth.hash_password import hash_password, verify_password
 from auth.token import get_current_user_id
 from auth.jwt import create_access_token
@@ -50,27 +51,6 @@ def build_verification_url(raw_token: str) -> str:
 
 def build_password_reset_url(raw_token: str) -> str:
     return f"{env_settings.frontend_url.rstrip('/')}/reset-password?token={raw_token}"
-
-
-def claim_username(email: str, db: Session) -> str:
-    """Derive a handle from the email's local part, suffixed until it's free.
-
-    The frontend shows a @handle everywhere, so leaving this null meant every new
-    account rendered an id prefix until the user visited settings to claim one.
-    The column is uniquely indexed, so two `alex@…` signups have to disagree.
-    """
-    base = email.split("@")[0].strip().lower() or "user"
-    # Matches the PATCH /auth/profile bounds so a generated handle is never one the
-    # user would be told is invalid.
-    base = base[:30]
-
-    candidate = base
-    suffix = 1
-    while db.query(User).filter(User.username == candidate).first():
-        suffix += 1
-        tail = str(suffix)
-        candidate = f"{base[: 30 - len(tail)]}{tail}"
-    return candidate
 
 
 # User Signup

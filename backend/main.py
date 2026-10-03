@@ -24,6 +24,7 @@ from routes.collections_route import router as collections_router
 from routes.community_route import router as community_router
 from routes.ai_route import router as ai_router
 from routes.comments_route import router as comments_router
+from routes.oauth_route import router as oauth_router
 
 Base.metadata.create_all(bind=engine)
 
@@ -79,3 +80,4 @@ app.include_router(user_router)
 app.include_router(health_router)
 app.include_router(ai_router)
 app.include_router(comments_router)
+app.include_router(oauth_router)

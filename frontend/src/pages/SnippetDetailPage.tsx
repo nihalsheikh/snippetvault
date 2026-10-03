@@ -17,11 +17,13 @@ import { Avatar } from '@/components/ui/Avatar'
 import { Button } from '@/components/ui/Button'
 import { InlineCode, CodeWithLineNumbers } from '@/components/ui/CodeBlock'
 import { LanguageBadge } from '@/components/ui/LanguageBadge'
+import { LoaderPanel } from '@/components/ui/Loader'
 import { NotFoundPage } from './NotFoundPage'
 import { useAuth } from '@/hooks/useAuth'
 import { ApiError, commentsApi, communityApi, messageOf, snippetsApi } from '@/lib/api'
 import { authorMap, toComment, toSnippet, toSnippets } from '@/lib/mappers'
 import { extensionFor, languageMeta, slugify } from '@/lib/languages'
+import { commentRefusal } from '@/lib/moderation'
 import {
   avatarGradient,
   countLines,
@@ -215,19 +217,21 @@ export function SnippetDetailPage() {
     <>
       {/* No top bar of its own: `AppLayout` renders one for this route. A second would
           double the header, and two bars would both claim `sticky top-0`. */}
-      <div className="flex justify-end max-lg:hidden">
+      <div className="flex justify-end gap-2 max-lg:hidden">
         <RightActions isOwner={isOwner} />
       </div>
 
-      <div className="mx-auto grid max-w-[1100px] grid-cols-[1fr_320px] gap-6 px-7 py-8 max-lg:grid-cols-1">
+      <div className="mx-auto grid max-w-[1100px] grid-cols-[1fr_320px] gap-6 px-7 py-8 max-lg:grid-cols-1 max-lg:px-4">
         {/* ---------- main column ---------- */}
         <div className="min-w-0">
           {!snippet ? (
-            <div className="flex min-h-[50vh] items-center justify-center">
-              <span className="animate-pulse font-mono text-[12px] text-t3">
-                {error ?? 'Loading snippet…'}
-              </span>
-            </div>
+            error ? (
+              <div className="flex min-h-[50vh] items-center justify-center px-6 text-center">
+                <span className="text-[13px] text-t2">{error}</span>
+              </div>
+            ) : (
+              <LoaderPanel label="Loading snippet" />
+            )
           ) : (
             <>
               <nav className="mb-3 flex flex-wrap items-center gap-1.5 font-mono text-[11px] text-t3">
@@ -279,12 +283,17 @@ export function SnippetDetailPage() {
 
               {/* ---------- code ---------- */}
               <div className="overflow-hidden rounded-[var(--radius-r3)] border border-b1 bg-s1">
-                <div className="flex items-center gap-2.5 border-b border-b1 bg-s2 px-4 py-2.5">
+                {/* One line when there's room; on a phone the buttons wrap onto their
+                    own row rather than scrolling off the right edge — "Copy snippet"
+                    is the main action here and it should never be the thing you can't
+                    reach. `sv-scroll-x` still covers the odd narrow case where the
+                    three buttons themselves can't fit. */}
+                <div className="sv-scroll-x flex flex-wrap items-center gap-2.5 border-b border-b1 bg-s2 px-4 py-2.5 max-sm:gap-y-2">
                   <span className="font-mono text-[11px] font-semibold text-lime">
                     {meta?.label}
                   </span>
                   <span className="font-mono text-[11px] text-t3">{filename}</span>
-                  <div className="ml-auto flex gap-2">
+                  <div className="ml-auto flex shrink-0 gap-2 max-sm:ml-0 max-sm:w-full max-sm:justify-end">
                     <CodeBarButton icon={<FileText size={11} />} onClick={download}>
                       Download
                     </CodeBarButton>
@@ -373,7 +382,7 @@ export function SnippetDetailPage() {
                   <span className="flex h-6 w-6 items-center justify-center rounded-[var(--radius-r1)] bg-[color-mix(in_srgb,var(--purple)_15%,transparent)]">
                     <Sparkles size={13} className="text-purple" />
                   </span>
-                  <span className="text-[13px] font-semibold text-purple">AI Explanation</span>
+                  <span className="text-[13px] font-semibold text-purple">SnippetVault AI</span>
                 </div>
                 <Explanation text={snippet.aiExplanation} />
               </div>
@@ -389,7 +398,7 @@ export function SnippetDetailPage() {
                   onClick={() => void explain()}
                 >
                   <Sparkles size={13} className="mr-1.5" />
-                  {explaining ? 'Explaining…' : 'Explain with AI'}
+                  {explaining ? 'Explaining…' : 'Explain with SnippetVault AI'}
                 </Button>
                 {explainError ? (
                   <p className="mt-2 text-[11px] text-t3">{explainError}</p>
@@ -603,10 +612,14 @@ function CommentForm({
   const [posting, setPosting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Checked as the author types, so the button greys out before they try to post.
+  // The backend refuses the same text with a 422; this only saves the round trip.
+  const refusal = draft.trim() ? commentRefusal(draft) : null
+
   async function submit(e: FormEvent) {
     e.preventDefault()
     const body = draft.trim()
-    if (!body || posting) return
+    if (!body || posting || refusal) return
     setPosting(true)
     setError(null)
     try {
@@ -630,14 +643,26 @@ function CommentForm({
           maxLength={COMMENT_LIMIT}
           placeholder="Add a comment..."
           aria-label="Add a comment"
+          aria-describedby={refusal ? 'comment-refusal' : undefined}
+          aria-invalid={refusal ? true : undefined}
           className="flex-1 rounded-[var(--radius-r2)] border border-b1 bg-s2 px-3.5 py-2.5 text-[13px] text-t1 outline-none transition-colors duration-200 placeholder:text-t4 focus:border-[color-mix(in_srgb,var(--lime)_35%,transparent)]"
         />
-        <Button type="submit" size="sm" disabled={!draft.trim() || posting}>
+        <Button type="submit" size="sm" disabled={!draft.trim() || posting || !!refusal}>
           {posting ? 'Posting…' : 'Post'}
         </Button>
       </form>
 
-      {error ? <p className="-mt-2 mb-4 text-[12px] text-t3">{error}</p> : null}
+      {refusal ? (
+        <p
+          id="comment-refusal"
+          role="alert"
+          className="-mt-2 mb-4 text-[12px] text-orange"
+        >
+          {refusal}
+        </p>
+      ) : error ? (
+        <p className="-mt-2 mb-4 text-[12px] text-t3">{error}</p>
+      ) : null}
     </>
   )
 }

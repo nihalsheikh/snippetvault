@@ -73,10 +73,18 @@ export function AppTopBar({
   const { pathname, search } = useLocation()
 
   return (
-    <div className="sticky top-0 z-50 flex h-14 items-center gap-4 border-b border-b1 bg-s1 px-5">
-      <Logo size="sm" />
-      <span className="h-5 w-px shrink-0 bg-b2" />
-      <div className="flex">
+    <div className="sticky top-0 z-50 flex h-14 items-center gap-4 border-b border-b1 bg-s1 px-5 max-lg:gap-3 max-lg:px-4">
+      <div className="shrink-0">
+        <Logo size="sm" compact />
+      </div>
+      <span className="h-5 w-px shrink-0 bg-b2 max-sm:hidden" />
+      {/* `min-w-0 flex-1` is what lets this column shrink below its content width at
+          all — a flex child defaults to `min-width: auto`, which is the intrinsic
+          width of the widest link, so the row refused to narrow and pushed "Explore"
+          off the right edge. With it, the links scroll horizontally instead: they stay
+          reachable on a phone instead of being hidden behind a menu that doesn't
+          exist yet, and `whitespace-nowrap` keeps "My Snippets" on one line. */}
+      <div className="sv-scroll-x flex min-w-0 flex-1">
         {links.map((link) => {
           // `isSameView` rather than a label comparison: two links can share a
           // pathname and differ only by query string, and both would light up.
@@ -87,7 +95,7 @@ export function AppTopBar({
               to={link.to}
               aria-current={isCurrent ? 'page' : undefined}
               className={cx(
-                'relative px-[14px] text-[13px] font-medium no-underline transition-colors duration-150',
+                'relative shrink-0 whitespace-nowrap px-[14px] text-[13px] font-medium no-underline transition-colors duration-150',
                 isCurrent ? 'text-lime' : 'text-t2 hover:text-t1',
               )}
             >
@@ -99,7 +107,7 @@ export function AppTopBar({
           )
         })}
       </div>
-      <div className="ml-auto flex items-center gap-2.5">{right}</div>
+      <div className="flex shrink-0 items-center gap-2.5 max-sm:gap-2">{right}</div>
     </div>
   )
 }

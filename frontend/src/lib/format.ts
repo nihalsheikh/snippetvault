@@ -39,12 +39,36 @@ export function initialsOf(name: string): string {
 }
 
 /**
- * The handle to show for an account. Falls back to the part of the email before the
- * `@` when no handle was claimed, which is also what the backend now writes at signup
- * — this covers rows created before that, where the column is still null.
+ * The handle to show for an account.
+ *
+ * Falls back to the email's local part, sanitized the same way the backend does it —
+ * `john.smith+dev@gmail.com` has to read as `john.smith_dev`, not as the raw string,
+ * and the address itself must never reach the UI. Accounts created before signup
+ * started writing handles are the reason this path exists at all.
  */
 export function usernameOf(p: { username: string | null; email: string }): string {
-  return p.username?.trim() || p.email.split('@')[0] || p.email
+  const claimed = p.username?.trim()
+  if (claimed) return claimed
+
+  const local = sanitizeHandle(p.email.split('@')[0] ?? '')
+  return local || `user-${stableHash(p.email).toString(36)}`
+}
+
+/** Mirrors `backend/utils/username.py::sanitize_username`. */
+function sanitizeHandle(raw: string): string {
+  return raw
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_.]+/g, '_')
+    .replace(/^[_.]+|[_.]+$/g, '')
+    .slice(0, 30)
+}
+
+/** A small stable hash, so the same address always yields the same fallback. */
+function stableHash(seed: string): number {
+  let hash = 0
+  for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0
+  return hash
 }
 
 /** Deterministic gradient so an author always gets the same avatar colour. */

@@ -6,6 +6,7 @@ import { SnippetCard } from '@/components/ui/SnippetCard'
 import { FilterChip } from '@/components/ui/Chip'
 import { Avatar } from '@/components/ui/Avatar'
 import { Button } from '@/components/ui/Button'
+import { LoaderPanel } from '@/components/ui/Loader'
 import { useDebounce } from '@/hooks/useDebounce'
 import { communityApi, messageOf, snippetsApi } from '@/lib/api'
 import { authorMap, toCommunityUser, toSnippets } from '@/lib/mappers'
@@ -233,8 +234,8 @@ export function CommunityPage() {
             </button>
           </div>
         ) : loading ? (
-          <div className="flex flex-col items-center justify-center rounded-[var(--radius-r2)] border border-dashed border-b2 py-16 text-center">
-            <p className="text-[13px] text-t3">Loading snippets…</p>
+          <div className="rounded-[var(--radius-r2)] border border-dashed border-b2 py-16">
+            <LoaderPanel label="Loading snippets" className="" />
           </div>
         ) : results.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-[var(--radius-r2)] border border-dashed border-b2 py-16 text-center">

@@ -21,3 +21,11 @@ createRoot(document.getElementById('root')!).render(
     </ErrorBoundary>
   </StrictMode>,
 )
+
+// The pre-first-paint loader in index.html has served its purpose — React owns the
+// screen now. Removed on the next frame rather than synchronously, so the handoff
+// happens once the browser has actually painted the app and it doesn't read as a
+// flicker. `display: none` keeps the frame from ever being invisible if this throws.
+requestAnimationFrame(() => {
+  document.getElementById('boot-loader')?.remove()
+})

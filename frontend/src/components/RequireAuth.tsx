@@ -10,6 +10,7 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 
 import { useAuth } from '@/hooks/useAuth'
+import { LoaderPanel } from '@/components/ui/Loader'
 
 /** Renders its child route, or redirects to sign in when there is no session. */
 export function RequireAuth() {
@@ -17,13 +18,7 @@ export function RequireAuth() {
   const location = useLocation()
 
   if (status === 'loading') {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <span className="animate-pulse font-mono text-[12px] text-t3">
-          Loading your library…
-        </span>
-      </div>
-    )
+    return <LoaderPanel label="Loading your library" className="min-h-[60vh]" />
   }
 
   if (status === 'anon') {

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 
 import { Input } from '@/components/ui/Input'
@@ -6,7 +6,7 @@ import { CodePreview } from '@/components/ui/CodeBlock'
 import { LanguageBadge } from '@/components/ui/LanguageBadge'
 import { Tag } from '@/components/ui/Chip'
 import { useAuth } from '@/hooks/useAuth'
-import { messageOf } from '@/lib/api'
+import { authApi, messageOf } from '@/lib/api'
 import { cx, formatNumber } from '@/lib/format'
 
 type Mode = 'login' | 'signup'
@@ -51,6 +51,39 @@ export function AuthPage() {
   const { login, signup } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+
+  // Only providers the server actually has credentials for. An empty list hides the
+  // whole section rather than showing two buttons that can't work.
+  const [providers, setProviders] = useState<string[]>([])
+
+  useEffect(() => {
+    let cancelled = false
+    void authApi
+      .oauthProviders()
+      .then((res) => {
+        if (!cancelled) setProviders(res.providers)
+      })
+      .catch(() => {
+        // A server without OAuth answers 404 on some deployments; that just means the
+        // section stays hidden, which is the correct outcome either way.
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  /**
+   * Hands the browser to the backend, which redirects to the provider and back to
+   * `/auth/callback` — a full page load, so nothing here has to survive it. The
+   * callback page exchanges the code and stores the session.
+   */
+  function startOAuth(provider: string) {
+    setError(null)
+    // Relative, like every other call in `api.ts`: the Vite proxy forwards it in dev
+    // and it is same-origin in production. A full page load, not fetch — the
+    // provider has to redirect the browser itself.
+    window.location.href = `/api/auth/oauth/${provider}/start`
+  }
 
   function switchMode(next: Mode) {
     setMode(next)
@@ -209,30 +242,28 @@ export function AuthPage() {
           </button>
         </form>
 
-        <div className="my-5 flex items-center gap-3 text-[12px] text-t3 before:h-px before:flex-1 before:bg-b1 before:content-[''] after:h-px after:flex-1 after:bg-b1 after:content-['']">
-          or continue with
-        </div>
+        {providers.length > 0 ? (
+          <>
+            <div className="my-5 flex items-center gap-3 text-[12px] text-t3 before:h-px before:flex-1 before:bg-b1 before:content-[''] after:h-px after:flex-1 after:bg-b1 after:content-['']">
+              or continue with
+            </div>
 
-        {/* No OAuth routes exist yet — `OAuthAccount` is a model with nothing
-            pointing at it. These stay disabled rather than dead-clickable. */}
-        <button
-          type="button"
-          disabled
-          title="Social login isn't available yet"
-          className="mb-2.5 flex w-full cursor-not-allowed items-center justify-center gap-2.5 rounded-[var(--radius-r1)] border border-b1 bg-s2 px-3.5 py-2.5 text-[13px] text-t4 opacity-60"
-        >
-          <GithubIcon />
-          Continue with GitHub
-        </button>
-        <button
-          type="button"
-          disabled
-          title="Social login isn't available yet"
-          className="flex w-full cursor-not-allowed items-center justify-center gap-2.5 rounded-[var(--radius-r1)] border border-b1 bg-s2 px-3.5 py-2.5 text-[13px] text-t4 opacity-60"
-        >
-          <GoogleIcon />
-          Continue with Google
-        </button>
+            {providers.map((provider, i) => (
+              <button
+                key={provider}
+                type="button"
+                onClick={() => startOAuth(provider)}
+                className={
+                  'flex w-full cursor-pointer items-center justify-center gap-2.5 rounded-[var(--radius-r1)] border border-b1 bg-s2 px-3.5 py-2.5 text-[13px] text-t2 transition-colors duration-200 hover:border-b2 hover:text-t1 ' +
+                  (i < providers.length - 1 ? 'mb-2.5' : '')
+                }
+              >
+                {provider === 'github' ? <GithubIcon /> : <GoogleIcon />}
+                Continue with {provider === 'github' ? 'GitHub' : 'Google'}
+              </button>
+            ))}
+          </>
+        ) : null}
 
         <div className="mt-5 text-center text-[13px] text-t2">
           {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}

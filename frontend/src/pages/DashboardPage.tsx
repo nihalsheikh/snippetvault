@@ -5,6 +5,7 @@ import { LayoutGrid, Plus, Search } from 'lucide-react'
 import { SnippetCard } from '@/components/ui/SnippetCard'
 import { FilterChip } from '@/components/ui/Chip'
 import { ButtonLink } from '@/components/ui/Button'
+import { LoaderPanel } from '@/components/ui/Loader'
 import { useDebounce } from '@/hooks/useDebounce'
 import { messageOf, snippetsApi } from '@/lib/api'
 import { toSnippets } from '@/lib/mappers'
@@ -130,8 +131,8 @@ export function DashboardPage() {
 
   return (
     <>
-      <div className="mb-7 flex items-center gap-3">
-        <div className="relative max-w-[440px] flex-1">
+      <div className="mb-7 flex flex-wrap items-center gap-3">
+        <div className="relative w-full max-w-[440px] flex-1 max-sm:w-full">
           <Search
             size={14}
             className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-t4"
@@ -143,7 +144,7 @@ export function DashboardPage() {
             className="w-full rounded-[var(--radius-r2)] border border-b1 bg-s2 py-2.5 pl-[38px] pr-4 text-[13px] text-t1 outline-none transition-colors duration-200 placeholder:text-t4 focus:border-[color-mix(in_srgb,var(--lime)_30%,transparent)]"
           />
         </div>
-        <div className="ml-auto flex gap-2">
+        <div className="ml-auto flex gap-2 max-sm:w-full">
           <ButtonLink to="/snippets/new" variant="ghost" size="sm">
             New Snippet
           </ButtonLink>
@@ -243,7 +244,7 @@ export function DashboardPage() {
           }
         />
       ) : loading && !data ? (
-        <MessageState title="Loading your library…" body="Fetching your snippets." />
+        <LoaderPanel label="Loading your library" className="py-16" />
       ) : results.length === 0 ? (
         <EmptyState />
       ) : (

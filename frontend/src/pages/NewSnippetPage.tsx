@@ -44,12 +44,11 @@ const SUGGESTED_TAGS = ['hooks', 'typescript', 'react', 'debounce', 'utils', 'pa
  */
 function explainErrorCopy(err: unknown): string {
   if (err instanceof ApiError) {
-    if (err.status === 401) return 'Sign in to use Explain with AI.'
+    if (err.status === 401) return 'Sign in to use SnippetVault AI.'
     if (err.status === 429) return 'You’ve hit the rate limit — try again in a minute.'
     if (err.status === 502) {
-      // The route forwards the provider's own message, which is the only thing
-      // that can say *why* — a bad key, an unknown model id and an empty
-      // response all land on 502 and are indistinguishable by status alone.
+      // The server's wording is already written for the reader and deliberately
+      // free of any model or provider detail, so it can be shown as-is.
       return `${err.message} Your snippet is unaffected — save it and try again later.`
     }
   }
@@ -226,7 +225,7 @@ export function NewSnippetPage() {
             className="ml-auto flex cursor-pointer items-center gap-2 rounded-[var(--radius-r1)] border border-[color-mix(in_srgb,var(--purple)_25%,transparent)] bg-[color-mix(in_srgb,var(--purple)_10%,transparent)] px-3.5 py-[7px] text-[12px] font-medium text-purple transition-colors hover:bg-[color-mix(in_srgb,var(--purple)_18%,transparent)] disabled:opacity-60"
           >
             <Bot size={13} />
-            {explaining ? 'Explaining…' : 'Explain with AI'}
+            {explaining ? 'Explaining…' : 'Explain with SnippetVault AI'}
           </button>
         </div>
 
@@ -340,11 +339,11 @@ export function NewSnippetPage() {
           <section className="border-b border-b1 pb-5">
             <div className="mb-2.5 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.5px] text-purple">
               <Bot size={12} />
-              AI Explanation
+              SnippetVault AI
             </div>
             <div className="rounded-[var(--radius-r2)] border border-[color-mix(in_srgb,var(--purple)_20%,transparent)] bg-[color-mix(in_srgb,var(--purple)_6%,transparent)] p-3.5">
               <div className="mb-2 font-mono text-[11px] tracking-[0.5px] text-purple">
-                ✦ Generated explanation
+                ✦ Written by SnippetVault AI
               </div>
               <p className="text-[12px] leading-[1.7] text-t2">
                 {explanation.split(/(`[^`]+`)/g).map((part, i) =>

@@ -5,6 +5,7 @@ from uuid import UUID
 from middleware.rate_limit import limiter
 from models import Snippet, Comment
 from utils.get_db import get_db
+from utils.moderation import screen_comment
 from auth.token import get_current_user_id
 from schemas.comment_req_res import (
     CommentResponse,
@@ -92,10 +93,20 @@ def create_comment(
             status_code=status.HTTP_404_NOT_FOUND, detail="Snippet not found"
         )
 
+    body = comment_data.body.strip()
+
+    # Links are the snippet author's privilege, not a commenter's, and promo/NSFW
+    # copy has no place on a code page. Refused before the insert, so nothing that
+    # trips the rules ever reaches the table — the frontend mirrors this to disable
+    # the Post button, but that is a courtesy, not the enforcement.
+    refusal = screen_comment(body)
+    if refusal:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=refusal)
+
     comment = Comment(
         user_id=user_id,
         snippet_id=snippet_id,
-        body=comment_data.body.strip(),
+        body=body,
     )
 
     db.add(comment)

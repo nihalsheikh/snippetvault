@@ -4,6 +4,7 @@ import { ArrowLeft, FileCode2 } from 'lucide-react'
 
 import { Avatar } from '@/components/ui/Avatar'
 import { ButtonLink } from '@/components/ui/Button'
+import { LoaderPanel } from '@/components/ui/Loader'
 import { SnippetCard } from '@/components/ui/SnippetCard'
 import { useAuth } from '@/hooks/useAuth'
 import { ApiError, communityApi, messageOf } from '@/lib/api'
@@ -67,11 +68,7 @@ export function UserPage() {
   }, [id])
 
   if (state.kind === 'loading') {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <span className="animate-pulse font-mono text-[12px] text-t3">Loading profile…</span>
-      </div>
-    )
+    return <LoaderPanel label="Loading profile" />
   }
 
   if (state.kind === 'missing') {

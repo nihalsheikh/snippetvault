@@ -10,6 +10,7 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 
 import { useAuth } from '@/hooks/useAuth'
+import { LoaderPanel } from '@/components/ui/Loader'
 
 /** Where a signed-in visitor goes. The dashboard is the app's actual home. */
 const SIGNED_IN_HOME = '/dashboard'
@@ -22,11 +23,7 @@ export function RequireAnon() {
   const location = useLocation()
 
   if (status === 'loading') {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <span className="animate-pulse font-mono text-[12px] text-t3">Loading…</span>
-      </div>
-    )
+    return <LoaderPanel className="min-h-[60vh]" />
   }
 
   if (status === 'authed') {

@@ -30,5 +30,13 @@ class EnvSettings:
     brevo_sender_email: str = os.getenv("BREVO_SENDER_EMAIL")
     brevo_sender_name: str = os.getenv("BREVO_SENDER_NAME")
 
+    # OAuth is optional: a provider with no client id is simply reported as
+    # unconfigured, and the frontend hides its button. Nothing here is required at
+    # import, so the app still boots without any of it filled in.
+    google_client_id: str | None = os.getenv("GOOGLE_CLIENT_ID") or None
+    google_client_secret: str | None = os.getenv("GOOGLE_CLIENT_SECRET") or None
+    github_client_id: str | None = os.getenv("GITHUB_CLIENT_ID") or None
+    github_client_secret: str | None = os.getenv("GITHUB_CLIENT_SECRET") or None
+
 
 env_settings = EnvSettings()

@@ -15,7 +15,7 @@ import { Tag } from '@/components/ui/Chip'
 const FEATURES = [
   {
     icon: Sparkles,
-    title: 'AI Explanations',
+    title: 'SnippetVault AI',
     desc: 'Select any snippet and get an instant, plain-English explanation. No more deciphering legacy code alone.',
   },
   {

@@ -34,10 +34,12 @@ def ai_explain(
             title=explain_data.title,
         )
     except AIServiceError as exc:
+        # `public_message`, never `str(exc)`: the provider's wording names the model
+        # and host, and this response goes straight to the browser.
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"AI explanation unavailable: {exc}",
-        )
+            detail=exc.public_message,
+        ) from exc
 
     return {"message": "Snippet explained successfully", "explanation": explanation}
 
@@ -61,7 +63,7 @@ def ai_generate_title(
     except AIServiceError as exc:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"AI title generation unavailable: {exc}",
-        )
+            detail=exc.public_message,
+        ) from exc
 
     return {"message": "Title generated successfully", "title": title}

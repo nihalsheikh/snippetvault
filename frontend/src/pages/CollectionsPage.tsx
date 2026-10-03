@@ -4,6 +4,7 @@ import { FolderOpen, Pencil, Plus, Trash2, X } from 'lucide-react'
 
 import { Button } from '@/components/ui/Button'
 import { LanguageBadge } from '@/components/ui/LanguageBadge'
+import { LoaderPanel } from '@/components/ui/Loader'
 import { collectionsApi, messageOf, snippetsApi } from '@/lib/api'
 import { toCollection, toSnippets } from '@/lib/mappers'
 import { cx, formatDate, formatNumber } from '@/lib/format'
@@ -166,7 +167,7 @@ export function CollectionsPage() {
       ) : null}
 
       {loading ? (
-        <p className="py-16 text-center text-[13px] text-t3">Loading collections…</p>
+        <LoaderPanel label="Loading collections" className="py-16" />
       ) : collections.length === 0 ? (
         <EmptyCollections />
       ) : (
@@ -530,7 +531,7 @@ function AddSnippetPicker({
       </div>
 
       {loading ? (
-        <p className="py-4 text-center text-[12px] text-t3">Loading…</p>
+        <LoaderPanel label="Loading snippets" className="py-4" size={20} />
       ) : error ? (
         <p className="py-4 text-center text-[12px] text-red">{error}</p>
       ) : candidates.length === 0 ? (

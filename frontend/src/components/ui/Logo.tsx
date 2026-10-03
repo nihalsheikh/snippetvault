@@ -6,10 +6,19 @@ export function Logo({
   to = '/',
   size = 'md',
   className,
+  compact = false,
 }: {
   to?: string
   size?: 'sm' | 'md' | 'lg'
   className?: string
+  /**
+   * Drop the wordmark on small screens, leaving just the tile. The app top bar needs
+   * the room: it carries three nav links plus search, theme, "New snippet" and the
+   * avatar, and at 390px the 128px wordmark is the difference between one visible nav
+   * link and three. The tile still links home and still reads as SnippetVault once
+   * you've seen it once.
+   */
+  compact?: boolean
 }) {
   const tile = {
     sm: 'h-[26px] w-[26px] rounded-[6px] text-[10px]',
@@ -29,7 +38,7 @@ export function Logo({
       >
         SV
       </span>
-      <span className={cx('font-bold tracking-[-0.4px] text-t1', word)}>
+      <span className={cx('font-bold tracking-[-0.4px] text-t1', word, compact && 'hidden sm:inline')}>
         Snippet<span className="text-lime">Vault</span>
       </span>
     </Link>

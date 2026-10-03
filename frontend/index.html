@@ -30,6 +30,93 @@
   </head>
   <body>
     <div id="root"></div>
+    <!--
+      Shown until React mounts. #root starts empty, so without this the page is a
+      blank field while the bundle parses — this is the only loader that has to
+      exist outside React's tree. `main.tsx` removes it on mount.
+    -->
+    <div id="boot-loader">
+      <svg width="40" height="40" viewBox="0 0 100 100" fill="none" aria-hidden="true">
+        <style>
+          #boot-loader {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg, #08080f);
+            color: var(--lime, #bef264);
+            z-index: 9999;
+          }
+          #boot-loader svg g {
+            animation: sv-boot-dot 1.6s ease-in-out infinite;
+          }
+          /* Row 0 is the top of the grid; the fill rises from the bottom, so
+             the delay counts down as the row index grows. */
+          #boot-loader svg g:nth-of-type(1) { animation-delay: 0.36s; }
+          #boot-loader svg g:nth-of-type(2) { animation-delay: 0.27s; }
+          #boot-loader svg g:nth-of-type(3) { animation-delay: 0.18s; }
+          #boot-loader svg g:nth-of-type(4) { animation-delay: 0.09s; }
+          #boot-loader svg g:nth-of-type(5) { animation-delay: 0s; }
+          @keyframes sv-boot-dot {
+            0%, 100% { opacity: 0.18; transform: scale(0.7); }
+            12% { opacity: 0.18; transform: scale(0.7); }
+            46%, 62% { opacity: 1; transform: scale(1); }
+            80% { opacity: 0.18; transform: scale(0.7); }
+          }
+          @media (prefers-reduced-motion: reduce) {
+            #boot-loader svg g { animation: none; opacity: 0.5; }
+          }
+          /* Visually hidden, but readable to a screen reader. Declared here
+             because Tailwind's `sr-only` needs a stylesheet that hasn't loaded
+             at this point. */
+          .boot-sr {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
+          }
+        </style>
+        <g>
+          <circle cx="14.65" cy="14.65" r="3.1" fill="currentColor" />
+          <circle cx="23.85" cy="14.65" r="3.1" fill="currentColor" />
+          <circle cx="33.05" cy="14.65" r="3.1" fill="currentColor" />
+          <circle cx="42.25" cy="14.65" r="3.1" fill="currentColor" />
+          <circle cx="51.45" cy="14.65" r="3.1" fill="currentColor" />
+        </g>
+        <g>
+          <circle cx="14.65" cy="23.85" r="3.1" fill="currentColor" />
+          <circle cx="23.85" cy="23.85" r="3.1" fill="currentColor" />
+          <circle cx="33.05" cy="23.85" r="3.1" fill="currentColor" />
+          <circle cx="42.25" cy="23.85" r="3.1" fill="currentColor" />
+          <circle cx="51.45" cy="23.85" r="3.1" fill="currentColor" />
+        </g>
+        <g>
+          <circle cx="14.65" cy="33.05" r="3.1" fill="currentColor" />
+          <circle cx="23.85" cy="33.05" r="3.1" fill="currentColor" />
+          <circle cx="33.05" cy="33.05" r="3.1" fill="currentColor" />
+          <circle cx="42.25" cy="33.05" r="3.1" fill="currentColor" />
+          <circle cx="51.45" cy="33.05" r="3.1" fill="currentColor" />
+        </g>
+        <g>
+          <circle cx="14.65" cy="42.25" r="3.1" fill="currentColor" />
+          <circle cx="23.85" cy="42.25" r="3.1" fill="currentColor" />
+          <circle cx="33.05" cy="42.25" r="3.1" fill="currentColor" />
+          <circle cx="42.25" cy="42.25" r="3.1" fill="currentColor" />
+          <circle cx="51.45" cy="42.25" r="3.1" fill="currentColor" />
+        </g>
+        <g>
+          <circle cx="14.65" cy="51.45" r="3.1" fill="currentColor" />
+          <circle cx="23.85" cy="51.45" r="3.1" fill="currentColor" />
+          <circle cx="33.05" cy="51.45" r="3.1" fill="currentColor" />
+          <circle cx="42.25" cy="51.45" r="3.1" fill="currentColor" />
+          <circle cx="51.45" cy="51.45" r="3.1" fill="currentColor" />
+        </g>
+      </svg>
+      <span class="boot-sr">Loading SnippetVault</span>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

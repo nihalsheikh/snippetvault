@@ -4,6 +4,7 @@ import { Camera, Pencil, X } from 'lucide-react'
 
 import { Avatar } from '@/components/ui/Avatar'
 import { Button } from '@/components/ui/Button'
+import { LoaderPanel } from '@/components/ui/Loader'
 import { Toggle } from '@/components/ui/Toggle'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { useAuth } from '@/hooks/useAuth'
@@ -45,11 +46,7 @@ export function ProfilePage() {
   }, [])
 
   if (!profile) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <span className="animate-pulse font-mono text-[12px] text-t3">Loading profile…</span>
-      </div>
-    )
+    return <LoaderPanel label="Loading profile" />
   }
 
   const author: Author = {
@@ -108,11 +105,13 @@ export function ProfilePage() {
         <ProfileStat value={formatNumber(total)} label="Snippets" color="var(--lime)" />
         <ProfileStat value={formatNumber(copies)} label="Total copies" color="var(--t1)" />
         <ProfileStat value={formatNumber(explained)} label="AI explains" color="var(--purple)" />
+        {/* "AI explains" counts stored explanations; the model behind them is never
+            named in the UI. */}
         <ProfileStat value={formatNumber(bestCopies)} label="Best snippet copies" color="var(--t1)" />
       </div>
 
       {/* ---------- tabs ---------- */}
-      <div className="mb-7 flex overflow-x-auto border-b border-b1 max-md:text-[11px]">
+      <div className="sv-scroll-x mb-7 flex border-b border-b1 max-md:text-[11px]">
         {TABS.map((name) => (
           <button
             key={name}

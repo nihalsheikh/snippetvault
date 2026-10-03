@@ -206,6 +206,40 @@ html.light {
   animation: rise 0.5s ease both;
 }
 
+/* ------------------------------------------------------------------
+   Dot-matrix "compile" loader
+   ------------------------------------------------------------------
+   A 5×5 grid whose rows light bottom-up, then release as one. Each row
+   runs the same two-keyframe cycle at a shared period with an offset, so
+   the fill reads as a rising level and the release stays synchronised
+   across the whole grid — a wave of dots, not 25 independent blinks.
+
+   Row N (0 = top) starts `N * riseStep` late within one period, which is
+   what staggers the fill; the period is long enough that every row has
+   finished rising before the last one begins its fall.
+   ------------------------------------------------------------------ */
+@keyframes sv-dot-compile {
+  0%,
+  100% {
+    opacity: 0.18;
+    transform: scale(0.7);
+  }
+  12% {
+    opacity: 0.18;
+    transform: scale(0.7);
+  }
+  /* hold the lit state through the crest of the cycle */
+  46%,
+  62% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  80% {
+    opacity: 0.18;
+    transform: scale(0.7);
+  }
+}
+
 /* Scrollbars — kept in step with the surfaces */
 @layer base {
   * {
@@ -238,6 +272,23 @@ html.light {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
+  }
+}
+
+/* ------------------------------------------------------------------
+   Horizontal scroll without a scrollbar
+   The app top bar scrolls its links sideways on a phone, and the code
+   bar scrolls its buttons on a narrow screen. Both read as content
+   running off the edge, which is the same problem as a visible
+   scrollbar, so the bar is hidden while the scrolling still works.
+   ------------------------------------------------------------------ */
+@utility sv-scroll-x {
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
   }
 }
 

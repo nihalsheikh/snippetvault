@@ -17,6 +17,7 @@ import { NewSnippetPage } from '@/pages/NewSnippetPage'
 import { ProfilePage } from '@/pages/ProfilePage'
 import { UserPage } from '@/pages/UserPage'
 import { VerifyEmailPage } from '@/pages/VerifyEmailPage'
+import { OAuthCallbackPage } from '@/pages/OAuthCallbackPage'
 import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage'
 import { ResetPasswordPage } from '@/pages/ResetPasswordPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
@@ -49,6 +50,11 @@ export default function App() {
         {/* Auth is a full-screen split, so it sits outside the site shell */}
         <Route path="/auth" element={<AuthPage />} />
       </Route>
+
+      {/* The OAuth redirect target. Deliberately outside `RequireAnon`: this page is
+          what *establishes* the session, so a guard that redirects anyone already
+          signed in would be judging the previous state rather than this one. */}
+      <Route path="/auth/callback" element={<OAuthCallbackPage />} />
 
       <Route element={<SiteLayout />}>
         <Route path="/pricing" element={<PricingPage />} />
