@@ -20,8 +20,16 @@ const PERIOD_S = 1.6
 /** Delay between one row starting and the row below it. */
 const RISE_STEP_S = 0.09
 
+/**
+ * Default edge length in px. A 5×5 grid of dots at 28px puts each dot under 6px
+ * across on a high-DPI screen, which reads as a smudge rather than as motion — the
+ * animation is the only thing telling you the page is working. 88 gives the grid
+ * room to be seen and makes the wait legible from across a desk.
+ */
+const DEFAULT_SIZE = 88
+
 export function Loader({
-  size = 28,
+  size = DEFAULT_SIZE,
   className,
   label = 'Loading',
 }: {
@@ -88,20 +96,23 @@ export function Loader({
 export function LoaderPanel({
   label = 'Loading',
   className = 'min-h-[50vh]',
-  size = 28,
+  size = DEFAULT_SIZE,
 }: {
   label?: string
   className?: string
   size?: number
 }) {
   return (
+    // `w-full` alongside the centring: without an explicit width the flex container
+    // is only as wide as the grid inside it, so `justify-center` centres the loader
+    // within ~88px of itself and it sits at the far left of the page.
     <div
-      className={`flex items-center justify-center ${className}`}
+      className={`flex w-full items-center justify-center ${className}`}
       role="status"
       aria-live="polite"
       aria-label={label}
     >
-      <div className="flex flex-col items-center gap-3 text-t3">
+      <div className="flex flex-col items-center gap-4 text-t3">
         <Loader size={size} className="text-lime" label={label} />
         <span className="font-mono text-[11px] tracking-[0.5px]">{label}…</span>
       </div>

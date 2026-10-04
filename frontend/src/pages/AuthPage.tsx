@@ -11,6 +11,9 @@ import { cx, formatNumber } from '@/lib/format'
 
 type Mode = 'login' | 'signup'
 
+/** How long the success notice stays up before handing over to the login form. */
+const REDIRECT_SECONDS = 6
+
 const SHOWCASE = [
   {
     lang: 'typescript' as const,
@@ -47,6 +50,11 @@ export function AuthPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  /**
+   * Counts down after a successful signup, then switches to the login form. `null`
+   * means "not counting", which is every state other than a just-completed signup.
+   */
+  const [redirectIn, setRedirectIn] = useState<number | null>(null)
 
   const { login, signup } = useAuth()
   const navigate = useNavigate()
@@ -72,6 +80,24 @@ export function AuthPage() {
     }
   }, [])
 
+  // Signup returns no tokens, so there is nowhere to navigate *to* — the account can't
+  // be used until the emailed link is opened. Landing on the login form is the useful
+  // next step, and a countdown makes the handover legible instead of having the form
+  // silently swap modes under someone who is still reading the notice.
+  useEffect(() => {
+    if (redirectIn === null) return
+
+    if (redirectIn <= 0) {
+      setNotice(null)
+      setRedirectIn(null)
+      switchMode('login')
+      return
+    }
+
+    const timer = setTimeout(() => setRedirectIn((n) => (n === null ? null : n - 1)), 1000)
+    return () => clearTimeout(timer)
+  }, [redirectIn])
+
   /**
    * Hands the browser to the backend, which redirects to the provider and back to
    * `/auth/callback` — a full page load, so nothing here has to survive it. The
@@ -90,6 +116,9 @@ export function AuthPage() {
     setParams({ mode: next }, { replace: true })
     setError(null)
     setNotice(null)
+    // Switching tabs is a person changing their mind; it cancels the pending
+    // auto-handover, so the countdown can't yank the form back mid-thought.
+    setRedirectIn(null)
   }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -116,6 +145,7 @@ export function AuthPage() {
           password: String(data.get('password') ?? ''),
         })
         setNotice(`${message} Check your inbox for the verification link.`)
+        setRedirectIn(REDIRECT_SECONDS)
       }
     } catch (err) {
       setError(messageOf(err))
@@ -228,9 +258,23 @@ export function AuthPage() {
           ) : null}
 
           {notice ? (
-            <p role="status" className="mb-4 rounded-[var(--radius-r1)] border border-[color-mix(in_srgb,var(--lime)_35%,transparent)] bg-[color-mix(in_srgb,var(--lime)_10%,transparent)] px-3 py-2.5 text-[13px] text-t2">
-              {notice}
-            </p>
+            <div
+              role="status"
+              className="mb-4 rounded-[var(--radius-r1)] border border-[color-mix(in_srgb,var(--lime)_35%,transparent)] bg-[color-mix(in_srgb,var(--lime)_10%,transparent)] px-3 py-2.5 text-[13px] text-t2"
+            >
+              <p>{notice}</p>
+              {redirectIn !== null ? (
+                <p className="mt-1.5 flex items-center gap-1.5 font-mono text-[11px] text-t3">
+                  <span
+                    aria-hidden="true"
+                    className="inline-block size-1.5 animate-pulse rounded-full bg-lime"
+                  />
+                  {redirectIn === 0
+                    ? 'Taking you to sign in…'
+                    : `Redirecting to sign in in ${redirectIn}s`}
+                </p>
+              ) : null}
+            </div>
           ) : null}
 
           <button

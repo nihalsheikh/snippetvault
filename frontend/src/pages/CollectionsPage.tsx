@@ -531,7 +531,7 @@ function AddSnippetPicker({
       </div>
 
       {loading ? (
-        <LoaderPanel label="Loading snippets" className="py-4" size={20} />
+        <LoaderPanel label="Loading snippets" className="py-4" size={28} />
       ) : error ? (
         <p className="py-4 text-center text-[12px] text-red">{error}</p>
       ) : candidates.length === 0 ? (

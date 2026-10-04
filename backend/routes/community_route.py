@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, Request, status, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from uuid import UUID
 
 from models import User, Snippet, Tag
@@ -9,6 +10,7 @@ from schemas.community_req_res import (
     CommunityUserSnippetsResponse,
 )
 from utils.get_db import get_db
+from utils.normalize import normalize_language
 
 router = APIRouter(prefix="/api", tags=["Community"])
 
@@ -108,7 +110,8 @@ def get_community_user_snippets(
     )
 
     if language:
-        query = query.filter(Snippet.language == language)
+        # Case-insensitive — see `utils/normalize.normalize_language`.
+        query = query.filter(func.lower(Snippet.language) == normalize_language(language))
 
     if tag:
         query = query.join(Snippet.tags).filter(Tag.slug == tag)

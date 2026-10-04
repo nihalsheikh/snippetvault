@@ -48,6 +48,7 @@ export function SnippetDetailPage() {
   const [notFound, setNotFound] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const [shared, setShared] = useState(false)
   const [explaining, setExplaining] = useState(false)
   const [explainError, setExplainError] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -148,8 +149,11 @@ export function SnippetDetailPage() {
       if (navigator.share) await navigator.share({ title: snippet?.title, url })
       else {
         await navigator.clipboard.writeText(url)
-        setCopied(true)
-        window.setTimeout(() => setCopied(false), 1800)
+        // Its own state, not `copied`. Sharing used to flip the *Copy snippet*
+        // button into its "Copied" state, so clicking Share lit up the button
+        // next to it and read as though the code — not the link — had been copied.
+        setShared(true)
+        window.setTimeout(() => setShared(false), 1800)
       }
     } catch {
       /* the user dismissed the sheet, or the clipboard is blocked */
@@ -297,8 +301,11 @@ export function SnippetDetailPage() {
                     <CodeBarButton icon={<FileText size={11} />} onClick={download}>
                       Download
                     </CodeBarButton>
-                    <CodeBarButton icon={<Share2 size={11} />} onClick={share}>
-                      Share
+                    <CodeBarButton
+                      icon={shared ? <Check size={11} /> : <Share2 size={11} />}
+                      onClick={share}
+                    >
+                      {shared ? 'Link copied' : 'Share'}
                     </CodeBarButton>
                     <CodeBarButton
                       icon={copied ? <Check size={11} /> : <Copy size={11} />}

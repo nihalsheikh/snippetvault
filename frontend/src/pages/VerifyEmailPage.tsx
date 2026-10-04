@@ -4,6 +4,7 @@ import { AlertCircle, CheckCircle2, Loader2, MailWarning, Send } from 'lucide-re
 
 import { Button, ButtonLink } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { Loader } from '@/components/ui/Loader'
 import { authApi } from '@/lib/api'
 
 type Status = 'verifying' | 'success' | 'error'
@@ -72,7 +73,9 @@ export function VerifyEmailPage() {
         }`}
       >
         {status === 'verifying' ? (
-          <Loader2 size={26} className="animate-spin" />
+          /* The shared dot-grid, not a lone spinner: this page is mostly waiting on
+             the network, and the app-wide loader is what every other wait looks like. */
+          <Loader size={88} className="text-t3" label="Verifying" />
         ) : status === 'success' ? (
           <CheckCircle2 size={28} />
         ) : status === 'error' ? (

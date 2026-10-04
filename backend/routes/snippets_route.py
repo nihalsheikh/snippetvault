@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, status, Depends, Request
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from datetime import datetime, timezone, timedelta
 from uuid import UUID
 
@@ -9,6 +10,7 @@ from models import Snippet, Tag, User, SnippetBookmark
 from utils.get_db import get_db
 from auth.token import get_current_user_id
 from services.ai_service import AIServiceError, explain_snippet
+from utils.normalize import normalize_language
 from schemas.snippet_req_res import (
     AllPublicSnippetResponse,
     TrendingSnippetResponse,
@@ -48,7 +50,10 @@ def get_public_snippets(
     query = db.query(Snippet).filter(Snippet.is_public.is_(True))
 
     if language:
-        query = query.filter(Snippet.language == language)
+        # Case-insensitive: the column holds whatever casing the author typed, and
+        # the frontend sends the lowercased id from its language table. Exact
+        # equality matched nothing for every snippet saved as "JavaScript".
+        query = query.filter(func.lower(Snippet.language) == normalize_language(language))
 
     if tag:
         query = query.join(Snippet.tags).filter(Tag.slug == tag)
@@ -97,7 +102,7 @@ def get_trending_snippets(
     query = db.query(Snippet).filter(Snippet.is_public.is_(True))
 
     if language:
-        query = query.filter(Snippet.language == language)
+        query = query.filter(func.lower(Snippet.language) == normalize_language(language))
 
     total = query.count()
 
@@ -216,7 +221,7 @@ def get_user_snippets(
     query = db.query(Snippet).filter(Snippet.author_id == user_id)
 
     if language:
-        query = query.filter(Snippet.language == language)
+        query = query.filter(func.lower(Snippet.language) == normalize_language(language))
 
     if tag:
         query = query.join(Snippet.tags).filter(Tag.slug == tag)
@@ -615,7 +620,7 @@ def get_user_bookmarks(
     )
 
     if language:
-        query = query.filter(Snippet.language == language)
+        query = query.filter(func.lower(Snippet.language) == normalize_language(language))
 
     if tag:
         query = query.join(Snippet.tags).filter(Tag.slug == tag)

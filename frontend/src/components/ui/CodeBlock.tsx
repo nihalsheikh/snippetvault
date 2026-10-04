@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { highlight, TOKEN_COLOR, type Token } from '@/lib/highlight'
+import { cx } from '@/lib/format'
 import type { Language } from '@/lib/types'
 
 interface CodePreviewProps {
@@ -17,6 +18,11 @@ export function CodePreview({ code, language, maxLines = 5, className }: CodePre
   const truncated = lines.length > shown.length
 
   return (
+    // Substitutes rather than merges. All three callers pass their own padding,
+    // background and font size to replace the defaults outright; merging would
+    // leave both `p-3.5` and `p-0` in the class list and let the stylesheet's
+    // source order decide the winner. `CodeWithLineNumbers` below merges instead,
+    // because its layout is structural and has to survive being restyled.
     <pre
       className={
         className ??
@@ -62,11 +68,15 @@ export function CodeWithLineNumbers({
 }) {
   const lines = highlight(code, language)
   return (
+    // `className` is merged, not substituted. The grid is what puts the gutter
+    // beside the code — a caller passing only colours and padding used to replace
+    // the whole thing, which stacked the two and pushed the code below the
+    // numbers. Merging keeps the layout a caller cannot see but always needs.
     <div
-      className={
-        className ??
-        'grid grid-cols-[32px_1fr] px-6 py-6 font-mono text-[13px] leading-[1.8] text-t2'
-      }
+      className={cx(
+        'grid grid-cols-[32px_1fr] px-6 py-6 font-mono text-[13px] leading-[1.8] text-t2',
+        className,
+      )}
     >
       <div className="select-none pr-4 text-right text-[12px] text-t4" aria-hidden="true">
         {lines.map((_, i) => (

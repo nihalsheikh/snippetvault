@@ -4,7 +4,6 @@ import { Bookmark, Compass, FolderOpen, Globe, LayoutGrid, Lock, TrendingUp } fr
 
 import { Avatar } from '@/components/ui/Avatar'
 import { LanguageDot } from '@/components/ui/LanguageBadge'
-import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { useAuth } from '@/hooks/useAuth'
 import { snippetsApi } from '@/lib/api'
 import { toSnippets } from '@/lib/mappers'
@@ -156,12 +155,11 @@ export function DashboardSidebar() {
         />
       </nav>
 
-      {/* No plan meter here. There is no billing backend and no plan on the account,
-          so a "FREE · 0/100" badge would be a limit the server never enforces — it
-          told people they were near a ceiling that did not exist. */}
-      <div className="mt-auto flex items-center justify-end gap-2 border-t border-b1 p-4">
-        <ThemeToggle className="h-[34px] w-[34px]" />
-      </div>
+      {/* Nothing in the footer. There is no billing backend and no plan on the
+          account, so a "FREE · 0/100" meter would be a limit the server never
+          enforces. The theme switch lives in the top bar, which is present on
+          every screen the sidebar appears on — two toggles meant two places to
+          look and one to forget. */}
     </aside>
   )
 }

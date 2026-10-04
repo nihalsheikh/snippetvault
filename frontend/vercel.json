@@ -1,3 +1,6 @@
 {
-  "rewrites": [{ "source": "/api/:path*", "destination": "https://snippetvault-fzwh.onrender.com/api/:path*" }]
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "https://snippetvault-fzwh.onrender.com/api/:path*" },
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ]
 }

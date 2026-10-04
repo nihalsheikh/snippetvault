@@ -35,7 +35,11 @@ export function AppLayout({ links, sidebar = true, wide = true }: AppLayoutProps
 
   return (
     <div className="min-h-screen bg-bg">
-      <AppTopBar links={links} right={<TopBarRight onSearch={() => setPaletteOpen(true)} />} />
+      <AppTopBar
+        links={links}
+        search={<SearchButton onSearch={() => setPaletteOpen(true)} />}
+        right={<TopBarRight />}
+      />
 
       <div className={cx('grid', showSidebar ? 'grid-cols-[240px_1fr] max-lg:grid-cols-1' : 'grid-cols-1')}>
         {showSidebar ? <DashboardSidebar /> : null}
@@ -50,28 +54,17 @@ export function AppLayout({ links, sidebar = true, wide = true }: AppLayoutProps
   )
 }
 
-function TopBarRight({ onSearch }: { onSearch: () => void }) {
-  const { profile } = useAuth()
-
-  // Community and the public snippet detail are reachable signed out, where there
-  // is no profile at all — the avatar then points at the login page instead.
-  const user: Author = profile
-    ? {
-        id: profile.id,
-        name: profile.name,
-        username: profile.username,
-        initials: initialsOf(profile.name) || initialsOf(profile.username) || '?',
-        avatarGradient: avatarGradient(profile.id),
-        profileImage: profile.profileImage,
-      }
-    : { id: '', name: 'Sign in', username: '', initials: '', avatarGradient: avatarGradient('') }
-
+/**
+ * The search trigger, rendered in the bar's centre column.
+ *
+ * The wide placeholder ("Search snippets... ⌘K") is desktop chrome: on a phone it
+ * can't be typed into, and it costs 160px of a 390px bar to say nothing. The icon
+ * below is the same action — the palette it opens is a real search over the user's
+ * library, and ⌘K is still bound on a desktop keyboard.
+ */
+function SearchButton({ onSearch }: { onSearch: () => void }) {
   return (
     <>
-      {/* The fake placeholder ("Search snippets... ⌘K") is desktop chrome: on a phone
-          it can't be typed into, and it costs 160px of a 390px bar to say nothing.
-          The icon below is the same action — the palette it opens is a real search
-          over the user's library, and ⌘K is still bound on a desktop keyboard. */}
       <button
         type="button"
         onClick={onSearch}
@@ -91,7 +84,28 @@ function TopBarRight({ onSearch }: { onSearch: () => void }) {
       >
         <Search size={14} />
       </button>
+    </>
+  )
+}
 
+function TopBarRight() {
+  const { profile } = useAuth()
+
+  // Community and the public snippet detail are reachable signed out, where there
+  // is no profile at all — the avatar then points at the login page instead.
+  const user: Author = profile
+    ? {
+        id: profile.id,
+        name: profile.name,
+        username: profile.username,
+        initials: initialsOf(profile.name) || initialsOf(profile.username) || '?',
+        avatarGradient: avatarGradient(profile.id),
+        profileImage: profile.profileImage,
+      }
+    : { id: '', name: 'Sign in', username: '', initials: '', avatarGradient: avatarGradient('') }
+
+  return (
+    <>
       {/* No notifications backend, so no bell. A hardcoded unread dot would claim
           activity that can never arrive. See ProfilePage's Notifications tab. */}
 
