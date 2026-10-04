@@ -1,8 +1,8 @@
 """Fill the database with a demo dataset.
 
 Everything here is fabricated. No real person's address, name, or work appears in
-this file, and the emails are deliberately addresses the seed owns rather than
-anything that could reach a real inbox — see `EMAIL_BASE`.
+this file, and every address sits on a domain reserved by RFC 2606, so none of them
+can reach a real inbox.
 
 Run it against a local database:
 
@@ -44,10 +44,17 @@ from utils.username import sanitize_username
 # tell a data change from a random one.
 RNG = random.Random(20261003)
 
-# All demo accounts are Gmail plus-addresses off one mailbox. The seed never sends
-# mail, so these addresses exist only as unique keys — and using plus-addressing
-# keeps the whole dataset inside a single inbox you already own.
-EMAIL_BASE = "engg.ns.kiro+{n}@gmail.com"
+# Each demo account carries its own address, carried on its USERS entry rather than
+# generated from a shared base. Two reasons:
+#
+#   * `example.com`, `example.net`, `example.org` and `example.dev` are reserved by
+#     RFC 2606 specifically so they can never resolve to a real mailbox. If someone
+#     clicks "forgot password" on a demo account, the mail goes nowhere — it cannot
+#     land in a stranger's inbox.
+#   * A shared domain with a `+N` suffix looks like a real person's address and reads
+#     as one in a screenshot. Unique, obviously-fake addresses look like what they are.
+#
+# The seed never sends mail either way; these exist to be unique keys.
 
 DEMO_PASSWORD = "John#123"
 
@@ -58,6 +65,7 @@ USERS = [
     {
         "name": "Ada Lovelace",
         "username": "ada",
+        "email": "ada.lovelace@example.com",
         "bio": "Writing notes on analytical engines. Mostly here for the SQL.",
         "website": "https://example.com/ada",
         "verified": True,
@@ -66,6 +74,7 @@ USERS = [
     {
         "name": "Grace Hopper",
         "username": "grace",
+        "email": "grace.hopper@example.net",
         "bio": "Compilers, and the occasional nanosecond.",
         "website": None,
         "verified": True,
@@ -74,6 +83,7 @@ USERS = [
     {
         "name": "Alan Turing",
         "username": "alan",
+        "email": "alan.turing@example.org",
         "bio": "Decidability, cryptography, and long walks.",
         "website": "https://example.com/alan",
         "verified": True,
@@ -82,6 +92,7 @@ USERS = [
     {
         "name": "Katherine Johnson",
         "username": "katherine",
+        "email": "katherine.johnson@example.dev",
         "bio": "Trajectories. Numerical methods fan.",
         "website": None,
         "verified": True,
@@ -90,6 +101,7 @@ USERS = [
     {
         "name": "Linus Torvalds",
         "username": "linus",
+        "email": "linus.torvalds@example.com",
         "bio": "Kernel poking. I will bikeshed your code style.",
         "website": "https://example.com/linus",
         "verified": True,
@@ -98,6 +110,7 @@ USERS = [
     {
         "name": "Barbara Liskov",
         "username": "barbara",
+        "email": "barbara.liskov@example.net",
         "bio": "Substitution over inheritance. Always.",
         "website": None,
         "verified": True,
@@ -106,6 +119,7 @@ USERS = [
     {
         "name": "Donald Knuth",
         "username": "knuth",
+        "email": "donald.knuth@example.org",
         "bio": "Literate programming apologist. Yes, really.",
         "website": "https://example.com/knuth",
         "verified": True,
@@ -114,6 +128,7 @@ USERS = [
     {
         "name": "Radia Perlman",
         "username": "radia",
+        "email": "radia.perlman@example.dev",
         "bio": "Networks that route around damage.",
         "website": None,
         "verified": True,
@@ -122,6 +137,7 @@ USERS = [
     {
         "name": "Margaret Hamilton",
         "username": "margaret",
+        "email": "margaret.hamilton@example.com",
         "bio": "Software engineering. The rest is detail.",
         "website": "https://example.com/margaret",
         "verified": True,
@@ -130,6 +146,7 @@ USERS = [
     {
         "name": "Tim Berners-Lee",
         "username": "timbl",
+        "email": "timbl@example.net",
         "bio": "Open by default.",
         "website": None,
         "verified": True,
@@ -138,6 +155,7 @@ USERS = [
     {
         "name": "Anita Borg",
         "username": "anita",
+        "email": "anita.borg@example.org",
         "bio": "Systems programming, and getting more people into it.",
         "website": None,
         "verified": True,
@@ -146,6 +164,7 @@ USERS = [
     {
         "name": "Jean Bartik",
         "username": "jean",
+        "email": "jean.bartik@example.dev",
         "bio": "ENIAC. The good old days.",
         "website": "https://example.com/jean",
         "verified": True,
@@ -154,6 +173,7 @@ USERS = [
     {
         "name": "Karen Spärck Jones",
         "username": "karen",
+        "email": "karen.sparckjones@example.com",
         "bio": "Information retrieval. IDF was mine.",
         "website": None,
         "verified": True,
@@ -162,6 +182,7 @@ USERS = [
     {
         "name": "Guido van Rossum",
         "username": "guido",
+        "email": "guido.vanrossum@example.net",
         "bio": "Python. Also BDFL-adjacent, reluctantly.",
         "website": None,
         "verified": True,
@@ -170,6 +191,7 @@ USERS = [
     {
         "name": "Bjarne Stroustrup",
         "username": "bjarne",
+        "email": "bjarne.stroustrup@example.org",
         "bio": "Zero-cost abstractions. Zero overhead, not zero complexity.",
         "website": "https://example.com/bjarne",
         "verified": True,
@@ -178,6 +200,7 @@ USERS = [
     {
         "name": "Anders Hejlsberg",
         "username": "anders",
+        "email": "anders.hejlsberg@example.dev",
         "bio": "Type systems that keep quiet while they work.",
         "website": None,
         "verified": True,
@@ -681,18 +704,18 @@ function throttle(fn, ms) {
         "tags": ["css", "layout", "frontend"],
         "public": True,
         "code": ''.join([
-            ".card {\\n",
-            "  display: grid;\\n",
-            "  place-items: center;\\n",
-            "  min-height: 240px;\\n",
-            "}\\n",
-            "\\n",
-            "/* Three columns that collapse to one on their own. No media query:\\n",
-            "   `auto-fit` + `minmax` is a responsive grid in two declarations. */\\n",
-            ".gallery {\\n",
-            "  display: grid;\\n",
-            "  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));\\n",
-            "  gap: 1rem;\\n",
+            ".card {\n",
+            "  display: grid;\n",
+            "  place-items: center;\n",
+            "  min-height: 240px;\n",
+            "}\n",
+            "\n",
+            "/* Three columns that collapse to one on their own. No media query:\n",
+            "   `auto-fit` + `minmax` is a responsive grid in two declarations. */\n",
+            ".gallery {\n",
+            "  display: grid;\n",
+            "  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));\n",
+            "  gap: 1rem;\n",
             "}",
         ]),
         "ai": (
@@ -713,19 +736,19 @@ function throttle(fn, ms) {
         "tags": ["css", "layout"],
         "public": True,
         "code": ''.join([
-            "/* 1. Grid — the default answer. Two declarations, no magic numbers. */\\n",
-            ".center { display: grid; place-items: center; }\\n",
-            "\\n",
-            "/* 2. Flex — when the parent is already a flex container. */\\n",
-            ".center-flex { display: flex; align-items: center; justify-content: center; }\\n",
-            "\\n",
-            "/* 3. Absolute + transform — centres relative to the *viewport*,\\n",
-            "   and the only one that survives scrolling. */\\n",
-            ".modal {\\n",
-            "  position: fixed;\\n",
-            "  inset: 0;\\n",
-            "  display: grid;\\n",
-            "  place-items: center;\\n",
+            "/* 1. Grid — the default answer. Two declarations, no magic numbers. */\n",
+            ".center { display: grid; place-items: center; }\n",
+            "\n",
+            "/* 2. Flex — when the parent is already a flex container. */\n",
+            ".center-flex { display: flex; align-items: center; justify-content: center; }\n",
+            "\n",
+            "/* 3. Absolute + transform — centres relative to the *viewport*,\n",
+            "   and the only one that survives scrolling. */\n",
+            ".modal {\n",
+            "  position: fixed;\n",
+            "  inset: 0;\n",
+            "  display: grid;\n",
+            "  place-items: center;\n",
             "}",
         ]),
         "ai": (
@@ -865,19 +888,19 @@ git revert HEAD
         "tags": ["css", "responsive", "frontend"],
         "public": False,
         "code": ''.join([
-            "@media (max-width: 640px) {\\n",
-            "  table, thead, tbody, tr, th, td { display: block; }\\n",
-            "\\n",
-            "  thead { position: absolute; width: 1px; height: 1px; overflow: hidden; }\\n",
-            "\\n",
-            "  tr { border-bottom: 1px solid var(--b1); padding: 0.5rem 0; }\\n",
-            "\\n",
-            "  td { display: flex; justify-content: space-between; }\\n",
-            "  td::before {\\n",
-            "    content: attr(data-label);   /* the label lives in the markup */\\n",
-            "    font-weight: 600;\\n",
-            "    color: var(--t3);\\n",
-            "  }\\n",
+            "@media (max-width: 640px) {\n",
+            "  table, thead, tbody, tr, th, td { display: block; }\n",
+            "\n",
+            "  thead { position: absolute; width: 1px; height: 1px; overflow: hidden; }\n",
+            "\n",
+            "  tr { border-bottom: 1px solid var(--b1); padding: 0.5rem 0; }\n",
+            "\n",
+            "  td { display: flex; justify-content: space-between; }\n",
+            "  td::before {\n",
+            "    content: attr(data-label);   /* the label lives in the markup */\n",
+            "    font-weight: 600;\n",
+            "    color: var(--t3);\n",
+            "  }\n",
             "}",
         ]),
         "ai": (
@@ -899,7 +922,7 @@ git revert HEAD
         "public": False,
         "code": '''#!/usr/bin/env bash
 set -euo pipefail
-IFS=$'\\n\\t'
+IFS=$'\n\\t'
 
 CONFIG="${1:-./app.conf}"
 
@@ -1138,14 +1161,22 @@ COLLECTIONS = [
 ]
 
 
+# Earlier revisions of this seed used Gmail plus-addresses off a single mailbox
+# (`engg.ns.kiro+N@gmail.com`). Those rows can still be sitting in a database that was
+# seeded from one of them, and `--reset` keys on the addresses in `USERS` — which no
+# longer match. Listing them here means a reset cleans up after itself instead of
+# leaving an orphaned dataset that no query in the app can reach.
+LEGACY_DEMO_EMAILS = [f"engg.ns.kiro+{n}@gmail.com" for n in range(1, 21)]
+
+
 def _reset(db) -> None:
     """Remove the demo rows, and only those.
 
-    Users are matched on the demo email pattern rather than by name, so this can
+    Users are matched on the demo email addresses rather than by name, so this can
     never touch an account a person actually signed up with — even one that happens
     to be called "ada".
     """
-    demo_emails = [u["email"] for u in USERS]
+    demo_emails = [u["email"] for u in USERS] + LEGACY_DEMO_EMAILS
     users = db.query(User).filter(User.email.in_(demo_emails)).all()
     if not users:
         print("nothing to reset")
@@ -1202,7 +1233,7 @@ def seed(reset: bool = False, verify: bool = True) -> None:
         created = skipped = 0
 
         for index, spec in enumerate(USERS, start=1):
-            email = spec.get("email") or EMAIL_BASE.format(n=index)
+            email = spec["email"]
 
             existing = db.query(User).filter(User.email == email).first()
             if existing:
@@ -1296,6 +1327,10 @@ def seed(reset: bool = False, verify: bool = True) -> None:
                 created_at=created_at,
                 updated_at=created_at,
             )
+            # Added before the tag loop below. Appending to a relationship on an object
+            # the session doesn't know about yet is silently ignored — SQLAlchemy warns
+            # and moves on, and the snippet ends up saved with no tags at all.
+            db.add(snippet)
 
             for tag_name in spec["tags"]:
                 normalized = tag_name.strip().lower()
@@ -1311,7 +1346,6 @@ def seed(reset: bool = False, verify: bool = True) -> None:
                     db.flush()
                 snippet.tags.append(tag)
 
-            db.add(snippet)
             db.commit()
             db.refresh(snippet)
             snippets.append(snippet)
@@ -1377,7 +1411,13 @@ def seed(reset: bool = False, verify: bool = True) -> None:
             candidates = [s for s in public_snippets if s.author_id != user.id]
             RNG.shuffle(candidates)
 
-            for snippet in candidates[: RNG.randint(2, 5)]:
+            # The count is keyed on the user, not on the draw, and the pool is filtered
+            # to what they have *not* already saved. Shuffling first and then taking a
+            # fixed slice would not be idempotent: every run reshuffles, so a re-run
+            # picks a different slice and the count creeps upward toward the size of
+            # the pool until the dashboard is nothing but bookmarks.
+            want = RNG.randint(2, 5) - len(already)
+            for snippet in candidates[: max(0, want)]:
                 if snippet.id in already:
                     continue
                 db.add(SnippetBookmark(user_id=user.id, snippet_id=snippet.id))
@@ -1461,11 +1501,14 @@ def seed(reset: bool = False, verify: bool = True) -> None:
         print("=" * 58)
         print()
         print(f"  every demo account signs in with: {DEMO_PASSWORD}")
-        print(f"  emails: {EMAIL_BASE.format(n=1)} … {EMAIL_BASE.format(n=len(USERS))}")
+        print("  sign in as any of:")
+        for spec in USERS[:3]:
+            print(f"    {spec['email']}")
+        print(f"    … and {len(USERS) - 3} more")
 
         pending = (
             db.query(User).filter(
-                User.email.like("engg.ns.kiro+%@gmail.com"),
+                User.email.like("%@example.%"),
                 User.email_verified.is_(False),
             ).count()
         )
